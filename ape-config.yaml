@@ -25,3 +25,24 @@ foundry:
     ethereum:
       mainnet:
         upstream_provider: alchemy
+
+dependencies:
+  - name: OpenZeppelin
+    github: OpenZeppelin/openzeppelin-contracts
+    version: 4.6.0
+  - name: UniswapV3Core
+    github: Uniswap/v3-core
+    branch: 0.8
+  - name: UniswapV3Periphery
+    github: Uniswap/v3-periphery
+    branch: 0.8
+  - name: BacktestApe
+    github: smolquants/backtest-ape
+    version: 0.1.0-alpha.4
+
+solidity:
+  import_remapping:
+    - "@openzeppelin/contracts=OpenZeppelin/4.6.0"
+    - "@uniswap/v3-core/contracts=UniswapV3Core/v0.8"
+    - "@uniswap/v3-periphery/contracts=UniswapV3Periphery/v0.8"
+    - "@smolquants/backtest-ape/contracts=BacktestApe/v0.1.0-alpha.4"
