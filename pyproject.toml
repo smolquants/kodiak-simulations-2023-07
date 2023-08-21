@@ -29,7 +29,7 @@ Issues = "https://github.com/unknown/kodiak-simulations-2023-07/issues"
 Source = "https://github.com/unknown/kodiak-simulations-2023-07"
 
 [tool.hatch.version]
-path = "__about__.py"
+path = "kodiak_simulations_2023_07/__about__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -145,7 +145,7 @@ source_pkgs = ["kodiak_simulations_2023_07", "tests"]
 branch = true
 parallel = true
 omit = [
-  "__about__.py",
+  "kodiak_simulations_2023_07/__about__.py",
 ]
 
 [tool.coverage.paths]
