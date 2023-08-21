@@ -24,9 +24,9 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Documentation = "https://github.com/unknown/kodiak-simulations-2023-07#readme"
-Issues = "https://github.com/unknown/kodiak-simulations-2023-07/issues"
-Source = "https://github.com/unknown/kodiak-simulations-2023-07"
+Documentation = "https://github.com/smolquants/kodiak-simulations-2023-07#readme"
+Issues = "https://github.com/smolquants/kodiak-simulations-2023-07/issues"
+Source = "https://github.com/smolquants/kodiak-simulations-2023-07"
 
 [tool.hatch.version]
 path = "kodiak_simulations_2023_07/__about__.py"
