@@ -10,11 +10,11 @@ from .utils import get_sqrt_ratio_at_tick, get_amounts_for_liquidity
 
 # fixed tick width lp runner classes for backtesting
 class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
+    liquidity: int = 0  # liquidity contribution by LP
     tick_width: int = 0  # 2 * delta
     blocks_between_rebalance: int = 0  # blocks between rebalances (assumes fixed blocktimes)
 
     _token_id: int = 1  # current token id
-    _liquidity: int = 0  # liquidity contribution by LP
     _block_rebalance_last: int = 0  # last block rebalanced
 
     def __init__(self, **data: Any):
@@ -61,12 +61,22 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
         Args:
             state (Mapping): The init state of mocks.
         """
+        mock_tokens = self._mocks["tokens"]
+
         self.tick_lower = state["slot0"].tick - self.tick_width // 2
         self.tick_upper = state["slot0"].tick + self.tick_width // 2
+        (amount0_desired, amount1_desired) = get_amounts_for_liquidity(
+            get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
+            get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
+            get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
+            self.liquidity,
+        )
+        self.amount_weth = amount0_desired if mock_tokens[0].symbol() == "WETH" else amount1_desired
+        self.amount_token = amount1_desired if mock_tokens[0].symbol() == "WETH" else amount0_desired
 
         super().init_mocks_state(state)
 
-        self._liquidity = self._get_position_liquidity(self._token_id)
+        self.liquidity = self._get_position_liquidity(self._token_id)
 
     def update_strategy(self, number: int, state: Mapping):
         """
@@ -93,7 +103,7 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
         # pull principal from existing position
         decrease_liquidity_params = (
             self._token_id,
-            self._liquidity,
+            self.liquidity,
             0,
             0,
             chain.blocks.head.timestamp + 86400
@@ -116,7 +126,7 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
             get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
             get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
             get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
-            self._liquidity,
+            self.liquidity,
         )
 
         # mint or burn tokens from backtester to "rebalance"
@@ -178,7 +188,7 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
         )
 
         self._token_id = self.backtester.count() + 1
-        self._liquidity = self._get_position_liquidity(self._token_id)
+        self.liquidity = self._get_position_liquidity(self._token_id)
 
         # store token id in backtester
         self.backtester.push(self._token_id, sender=self.acc)
@@ -218,7 +228,7 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
         )
         data.update({
             "position_token_id": self._token_id,
-            "position_liquidity": self._liquidity,
+            "position_liquidity": self.liquidity,
             "position_tick_lower": self.tick_lower,
             "position_tick_upper": self.tick_upper,
             "position_amount_weth": self.amount_weth,
