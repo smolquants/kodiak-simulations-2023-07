@@ -56,22 +56,14 @@ def main():
     # setup runner
     runner = runner_cls(**kwargs)
 
-    # prompt user for choice of method: backtest, replay, or forwardtest
-    method_name = click.prompt(
-        "Method",
-        type=click.Choice(["backtest", "replay", "forwardtest"], case_sensitive=False),
-    )
-
     # run backtest
+    # TODO: fix w for loop for multiple tick width runs
     start = click.prompt("Start block number", type=int)
     stop = click.prompt("Stop block number", type=int, default=-1)
     step = click.prompt("Step size", type=int, default=1)
-    path = f"scripts/results/{runner_cls_name}_{method_name}_{start}_{stop}_{step}.csv"
+    path = f"scripts/results/{runner_cls_name}_backtest_{start}_{stop}_{step}.csv"
     if stop < 0:
         stop = None
 
-    args = [path, start, stop]
-    if method_name != "replay":
-        args.append(step)
-
-    getattr(runner, method_name)(*args)
+    args = [path, start, stop, step]
+    runner.backtest(*args)

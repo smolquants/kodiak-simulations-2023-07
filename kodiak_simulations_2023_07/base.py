@@ -12,10 +12,10 @@ from .utils import get_sqrt_ratio_at_tick, get_amounts_for_liquidity
 class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
     tick_width: int = 0  # 2 * delta
     blocks_between_rebalance: int = 0  # blocks between rebalances (assumes fixed blocktimes)
-    block_rebalance_last: int = 0  # last block rebalanced
 
     _token_id: int = 1  # current token id
     _liquidity: int = 0  # liquidity contribution by LP
+    _block_rebalance_last: int = 0  # last block rebalanced
 
     def __init__(self, **data: Any):
         """
@@ -56,12 +56,16 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
 
     def init_mocks_state(self, state: Mapping):
         """
-        Overrides UniswapV3LPRunner to store liquidity contribution by LP.
+        Overrides UniswapV3LPRunner to use tick width and store liquidity contribution by LP.
 
         Args:
             state (Mapping): The init state of mocks.
         """
+        self.tick_lower = state["slot0"].tick - self.tick_width // 2
+        self.tick_upper = state["slot0"].tick + self.tick_width // 2
+
         super().init_mocks_state(state)
+
         self._liquidity = self._get_position_liquidity(self._token_id)
 
     def update_strategy(self, number: int, state: Mapping):
@@ -72,10 +76,13 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
           - tick_lower = tick_current - tick_width // 2
           - tick_upper = tick_current + tick_width // 2
         """
-        if number < self.block_rebalance_last + self.blocks_between_rebalance:
+        if self._block_rebalance_last == 0:
+            self._block_rebalance_last = number
+            return
+        elif number < self._block_rebalance_last + self.blocks_between_rebalance:
             return
 
-        self.block_rebalance_last = number
+        self._block_rebalance_last = number
 
         # some needed local vars
         mock_pool = self._mocks["pool"]
@@ -191,6 +198,7 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
         data.update(
             {
                 "sqrtPriceX96": state["slot0"].sqrtPriceX96,
+                "tick": state["slot0"].tick,
                 "liquidity": state["liquidity"],
                 "feeGrowthGlobal0X128": state["fee_growth_global0_x128"],
                 "feeGrowthGlobal1X128": state["fee_growth_global1_x128"],
@@ -211,6 +219,8 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
         data.update({
             "position_token_id": self._token_id,
             "position_liquidity": self._liquidity,
+            "position_tick_lower": self.tick_lower,
+            "position_tick_upper": self.tick_upper,
             "position_amount_weth": self.amount_weth,
             "position_amount_token": self.amount_token,
         })
