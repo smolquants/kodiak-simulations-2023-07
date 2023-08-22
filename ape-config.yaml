@@ -2,16 +2,11 @@ name: kodiak-simulations-2023-07
 
 plugins:
   - name: alchemy
-    version: 0.5.4
   - name: foundry
-    version: 0.5.2
   - name: notebook
-    version: 0.5.0-alpha.2
   - name: etherscan
-    version: 0.5.5
-  - name: risk
-    version: 0.1.0-alpha.2  
-  # TODO: update for ape>=0.6.0
+  - name: solidity
+  - name: risk  
 
 default_ecosystem: ethereum
 
@@ -29,20 +24,20 @@ foundry:
 dependencies:
   - name: OpenZeppelin
     github: OpenZeppelin/openzeppelin-contracts
-    version: 4.6.0
+    version: 4.7.3
   - name: UniswapV3Core
     github: Uniswap/v3-core
-    branch: 0.8
+    ref: 0.8
   - name: UniswapV3Periphery
     github: Uniswap/v3-periphery
-    branch: 0.8
+    ref: 0.8
   - name: BacktestApe
     github: smolquants/backtest-ape
-    version: 0.1.0-alpha.7
+    version: 0.1.0-alpha.8
 
 solidity:
   import_remapping:
-    - "@openzeppelin/contracts=OpenZeppelin/4.6.0"
+    - "@openzeppelin/contracts=OpenZeppelin/4.7.3"
     - "@uniswap/v3-core/contracts=UniswapV3Core/v0.8"
     - "@uniswap/v3-periphery/contracts=UniswapV3Periphery/v0.8"
-    - "@smolquants/backtest-ape/contracts=BacktestApe/v0.1.0-alpha.7"
+    - "@smolquants/backtest-ape/contracts=BacktestApe/v0.1.0-alpha.8"
