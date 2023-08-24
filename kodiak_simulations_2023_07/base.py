@@ -37,7 +37,6 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
             token_id (int): Token ID of the LP position
         """
         manager = self._mocks["manager"]
-        manager.position(token_id)
         (
             _,
             _,
