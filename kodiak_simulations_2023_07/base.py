@@ -2,14 +2,14 @@ import os
 import pandas as pd
 
 from ape import chain
-from backtest_ape.uniswap.v3 import UniswapV3LPRunner
+from backtest_ape.uniswap.v3 import UniswapV3LPBaseRunner
 from typing import Any, Mapping
 
 from .utils import get_sqrt_ratio_at_tick, get_amounts_for_liquidity
 
 
 # fixed tick width lp runner classes for backtesting
-class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
+class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPBaseRunner):
     liquidity: int = 0  # liquidity contribution by LP
     tick_width: int = 0  # 2 * delta
     blocks_between_rebalance: int = 0  # blocks between rebalances (assumes fixed blocktimes)
@@ -60,8 +60,6 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
         Args:
             state (Mapping): The init state of mocks.
         """
-        mock_tokens = self._mocks["tokens"]
-
         self.tick_lower = state["slot0"].tick - self.tick_width // 2
         self.tick_upper = state["slot0"].tick + self.tick_width // 2
         (amount0_desired, amount1_desired) = get_amounts_for_liquidity(
@@ -70,8 +68,8 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
             get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
             self.liquidity,
         )
-        self.amount_weth = amount0_desired if mock_tokens[0].symbol() == "WETH" else amount1_desired
-        self.amount_token = amount1_desired if mock_tokens[0].symbol() == "WETH" else amount0_desired
+        self.amount0 = amount0_desired
+        self.amount1 = amount1_desired
 
         super().init_mocks_state(state)
 
@@ -160,8 +158,8 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
         values = [0, 0]
         self.backtester.multicall(targets, datas, values, sender=self.acc)
 
-        self.amount_weth = amount0_desired if mock_tokens[0].symbol() == "WETH" else amount1_desired
-        self.amount_token = amount1_desired if mock_tokens[0].symbol() == "WETH" else amount0_desired
+        self.amount0 = amount0_desired
+        self.amount1 = amount1_desired
 
         # mint the lp position
         mint_params = (
@@ -230,8 +228,8 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPRunner):
             "position_liquidity": self.liquidity,
             "position_tick_lower": self.tick_lower,
             "position_tick_upper": self.tick_upper,
-            "position_amount_weth": self.amount_weth,
-            "position_amount_token": self.amount_token,
+            "position_amount0": self.amount0,
+            "position_amount1": self.amount1,
         })
 
         header = not os.path.exists(path)
