@@ -33,11 +33,11 @@ dependencies:
     ref: 0.8
   - name: BacktestApe
     github: smolquants/backtest-ape
-    version: 0.1.0-alpha.10
+    version: 0.1.0-alpha.11
 
 solidity:
   import_remapping:
     - "@openzeppelin/contracts=OpenZeppelin/4.7.3"
     - "@uniswap/v3-core/contracts=UniswapV3Core/v0.8"
     - "@uniswap/v3-periphery/contracts=UniswapV3Periphery/v0.8"
-    - "@smolquants/backtest-ape/contracts=BacktestApe/v0.1.0-alpha.10"
+    - "@smolquants/backtest-ape/contracts=BacktestApe/v0.1.0-alpha.11"

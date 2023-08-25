@@ -4,8 +4,8 @@ from .base import UniswapV3LPFixedWidthBaseRunner
 
 
 class UniswapV3LPFixedWidthFee0Runner(UniswapV3LPFixedWidthBaseRunner):
-    _backtester_name: ClassVar[str] = "UniswapV3LPFee0Backtest"  # contract to check fee0 accumulation
+    _backtester_name: ClassVar[str] = "Fee0Backtest"  # contract to check fee0 accumulation
 
 
 class UniswapV3LPFixedWidthFee1Runner(UniswapV3LPFixedWidthBaseRunner):
-    _backtester_name: ClassVar[str] = "UniswapV3LPFee0Backtest"  # contract to check fee1 accumulation
+    _backtester_name: ClassVar[str] = "Fee1Backtest"  # contract to check fee1 accumulation
