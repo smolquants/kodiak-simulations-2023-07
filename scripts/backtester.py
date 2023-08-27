@@ -29,7 +29,7 @@ def main():
     runner_cls = getattr(kodiak_simulations_2023_07, runner_cls_name)
 
     # prompt user for fields on runner to init with
-    skip_names = ["tick_lower", "tick_upper", "amount_weth", "amount_token"]
+    skip_names = ["tick_lower", "tick_upper", "amount0", "amount1"]
     kwargs = {}
     for name, field in runner_cls.__fields__.items():
         if name in skip_names:

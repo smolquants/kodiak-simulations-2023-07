@@ -1,4 +1,4 @@
-from .runners import UniswapV3LPFixedWidthRunner
+from .runner import UniswapV3LPFixedWidthRunner
 
 
 __all__ = [
