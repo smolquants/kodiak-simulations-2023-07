@@ -3,6 +3,7 @@ import pandas as pd
 
 from ape import chain
 from backtest_ape.uniswap.v3 import UniswapV3LPBaseRunner
+from backtest_ape.uniswap.v3.lp.mgmt import remove_liquidity_from_lp_position
 from typing import Any, ClassVar, List, Mapping
 
 from .utils import get_sqrt_ratio_at_tick, get_amounts_for_liquidity
@@ -17,6 +18,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
     _token_id: int = 1  # current token id
     _block_rebalance_last: int = 0  # last block rebalanced
     _backtester_name: ClassVar[str] = "UniswapV3LPFullBacktest"
+    _tick_spacing: int
 
     def __init__(self, **data: Any):
         """
@@ -26,8 +28,8 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         super().__init__(**data)
 
         pool = self._refs["pool"]
-        tick_spacing = pool.tickSpacing()
-        if (self.tick_width // 2) % tick_spacing != 0:
+        self._tick_spacing = pool.tickSpacing()
+        if (self.tick_width // 2) % self._tick_spacing != 0:
             raise ValueError("self.tick_width // 2 not a multiple of pool.tickSpacing")
 
     def _get_position_liquidity(self, token_id: int) -> int:
@@ -54,6 +56,25 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         ) = manager.positions(token_id)
         return liquidity
 
+    def _calculate_lp_ticks(self, state: Mapping) -> (int, int):
+        """
+        Calculates anticipated tick upper and lower with fixed width around
+        current tick.
+
+        Args:
+            state (Mapping): The state of mocks.
+        """
+        # get the closest available liquidity tick
+        remainder = state["slot0"].tick % self._tick_spacing
+        tick = state["slot0"].tick - remainder \
+            if remainder < self._tick_spacing // 2 \
+            else state["slot0"].tick + (self._tick_spacing - remainder)
+
+        # fixed width straddles closest tick to current state
+        tick_lower = tick - self.tick_width // 2
+        tick_upper = tick + self.tick_width // 2
+        return (tick_lower, tick_upper)
+
     def init_mocks_state(self, state: Mapping):
         """
         Overrides UniswapV3LPRunner to use tick width and store liquidity contribution by LP.
@@ -61,8 +82,12 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         Args:
             state (Mapping): The init state of mocks.
         """
-        self.tick_lower = state["slot0"].tick - self.tick_width // 2
-        self.tick_upper = state["slot0"].tick + self.tick_width // 2
+        # TODO: check whether issue minting on manager with fee accounting after set mock state
+        # some setup based off initial state
+        tick_lower, tick_upper = self._calculate_lp_ticks(state)
+        self.tick_lower = tick_lower
+        self.tick_upper = tick_upper
+
         (amount0_desired, amount1_desired) = get_amounts_for_liquidity(
             get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
             get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
@@ -74,6 +99,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
 
         super().init_mocks_state(state)
 
+        # store the actual liquidity minted
         self.liquidity = self._get_position_liquidity(self._token_id)
 
     def update_strategy(self, number: int, state: Mapping):
@@ -99,22 +125,13 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         ecosystem = chain.provider.network.ecosystem
 
         # pull principal from existing position
-        decrease_liquidity_params = (
+        remove_liquidity_from_lp_position(
+            mock_manager,
+            mock_pool,
+            self.backtester,
             self._token_id,
             self.liquidity,
-            0,
-            0,
-            chain.blocks.head.timestamp + 86400
-        )
-        self.backtester.execute(
-            mock_manager.address,
-            ecosystem.encode_transaction(
-                mock_manager.address,
-                mock_manager.decreaseLiquidity.abis[0],
-                decrease_liquidity_params,
-            ).data,
-            0,
-            sender=self.acc,
+            self.acc,
         )
 
         # mint a new position after "rebalancing" liquidity
@@ -126,6 +143,8 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
             get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
             self.liquidity,
         )
+
+        # TODO: fix below to use helper functions for univ3 lp
 
         # mint or burn tokens from backtester to "rebalance"
         # @dev assumes infinite external liquidity for pair (and zero fees)
@@ -206,34 +225,14 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         for i, value in enumerate(values):
             data[f"values{i}"] = value
 
-        data.update(
-            {
-                "sqrtPriceX96": state["slot0"].sqrtPriceX96,
-                "tick": state["slot0"].tick,
-                "liquidity": state["liquidity"],
-                "feeGrowthGlobal0X128": state["fee_growth_global0_x128"],
-                "feeGrowthGlobal1X128": state["fee_growth_global1_x128"],
-                "tickLowerFeeGrowthOutside0X128": state[
-                    "tick_info_lower"
-                ].feeGrowthOutside0X128,
-                "tickLowerFeeGrowthOutside1X128": state[
-                    "tick_info_lower"
-                ].feeGrowthOutside1X128,
-                "tickUpperFeeGrowthOutside0X128": state[
-                    "tick_info_upper"
-                ].feeGrowthOutside0X128,
-                "tickUpperFeeGrowthOutside1X128": state[
-                    "tick_info_upper"
-                ].feeGrowthOutside1X128,
-            }
-        )
         data.update({
+            "sqrtPriceX96": state["slot0"].sqrtPriceX96,
+            "tick": state["slot0"].tick,
+            "liquidity": state["liquidity"],
             "position_token_id": self._token_id,
             "position_liquidity": self.liquidity,
             "position_tick_lower": self.tick_lower,
             "position_tick_upper": self.tick_upper,
-            "position_amount0": self.amount0,
-            "position_amount1": self.amount1,
         })
 
         header = not os.path.exists(path)
