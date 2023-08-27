@@ -15,33 +15,34 @@ import {IMockNonfungiblePositionManager as INonfungiblePositionManager} from "..
 library MockPositionValue {
     /// @notice Returns the total amounts of token0 and token1, i.e. the sum of fees and principal
     /// that a given nonfungible position manager token is worth
-    /// @param positionManager The Uniswap V3 NonfungiblePositionManager
+    /// @param manager The Uniswap V3 NonfungiblePositionManager
     /// @param tokenId The tokenId of the token for which to get the total value
     /// @param sqrtRatioX96 The square root price X96 for which to calculate the principal amounts
     /// @return amount0 The total amount of token0 including principal and fees
     /// @return amount1 The total amount of token1 including principal and fees
     function total(
-        INonfungiblePositionManager positionManager,
+        address manager,
         uint256 tokenId,
         uint160 sqrtRatioX96
     ) internal view returns (uint256 amount0, uint256 amount1) {
-        (uint256 amount0Principal, uint256 amount1Principal) = principal(positionManager, tokenId, sqrtRatioX96);
-        (uint256 amount0Fee, uint256 amount1Fee) = fees(positionManager, tokenId);
+        (uint256 amount0Principal, uint256 amount1Principal) = principal(manager, tokenId, sqrtRatioX96);
+        (uint256 amount0Fee, uint256 amount1Fee) = fees(manager, tokenId);
         return (amount0Principal + amount0Fee, amount1Principal + amount1Fee);
     }
 
     /// @notice Calculates the principal (currently acting as liquidity) owed to the token owner in the event
     /// that the position is burned
-    /// @param positionManager The Uniswap V3 NonfungiblePositionManager
+    /// @param manager The Uniswap V3 NonfungiblePositionManager
     /// @param tokenId The tokenId of the token for which to get the total principal owed
     /// @param sqrtRatioX96 The square root price X96 for which to calculate the principal amounts
     /// @return amount0 The principal amount of token0
     /// @return amount1 The principal amount of token1
     function principal(
-        INonfungiblePositionManager positionManager,
+        address manager,
         uint256 tokenId,
         uint160 sqrtRatioX96
     ) internal view returns (uint256 amount0, uint256 amount1) {
+        INonfungiblePositionManager positionManager = INonfungiblePositionManager(manager);
         (, , , , , int24 tickLower, int24 tickUpper, uint128 liquidity, , , , ) = positionManager.positions(tokenId);
 
         return
@@ -67,14 +68,15 @@ library MockPositionValue {
     }
 
     /// @notice Calculates the total fees owed to the token owner
-    /// @param positionManager The Uniswap V3 NonfungiblePositionManager
+    /// @param manager The Uniswap V3 NonfungiblePositionManager
     /// @param tokenId The tokenId of the token for which to get the total fees owed
     /// @return amount0 The amount of fees owed in token0
     /// @return amount1 The amount of fees owed in token1
     function fees(
-        INonfungiblePositionManager positionManager,
+        address manager,
         uint256 tokenId
     ) internal view returns (uint256 amount0, uint256 amount1) {
+        INonfungiblePositionManager positionManager = INonfungiblePositionManager(manager);
         (
             ,
             ,

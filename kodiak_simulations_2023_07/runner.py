@@ -3,19 +3,20 @@ import pandas as pd
 
 from ape import chain
 from backtest_ape.uniswap.v3 import UniswapV3LPBaseRunner
-from typing import Any, Mapping
+from typing import Any, ClassVar, List, Mapping
 
 from .utils import get_sqrt_ratio_at_tick, get_amounts_for_liquidity
 
 
 # fixed tick width lp runner classes for backtesting
-class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPBaseRunner):
+class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
     liquidity: int = 0  # liquidity contribution by LP
     tick_width: int = 0  # 2 * delta
     blocks_between_rebalance: int = 0  # blocks between rebalances (assumes fixed blocktimes)
 
     _token_id: int = 1  # current token id
     _block_rebalance_last: int = 0  # last block rebalanced
+    _backtester_name: ClassVar[str] = "UniswapV3LPFullBacktest"
 
     def __init__(self, **data: Any):
         """
@@ -190,7 +191,7 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPBaseRunner):
         # store token id in backtester
         self.backtester.push(self._token_id, sender=self.acc)
 
-    def record(self, path: str, number: int, state: Mapping, value: int):
+    def record(self, path: str, number: int, state: Mapping, values: List[int]):
         """
         Overwrites UniswapV3LPRunner to record the value, some state at the given block,
         and liquidity + amounts backing LP's position.
@@ -199,9 +200,12 @@ class UniswapV3LPFixedWidthBaseRunner(UniswapV3LPBaseRunner):
             path (str): The path to the csv file to write the record to.
             number (int): The block number.
             state (Mapping): The state of references at block number.
-            value (int): The value of the backtester for the state.
+            values (List[int]): The values of the backtester for the state.
         """
-        data = {"number": number, "value": value}
+        data = {"number": number}
+        for i, value in enumerate(values):
+            data[f"values{i}"] = value
+
         data.update(
             {
                 "sqrtPriceX96": state["slot0"].sqrtPriceX96,

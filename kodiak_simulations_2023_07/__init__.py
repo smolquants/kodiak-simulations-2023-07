@@ -1,10 +1,6 @@
-from .runners import (
-    UniswapV3LPFixedWidthFee0Runner,
-    UniswapV3LPFixedWidthFee1Runner,
-)
+from .runners import UniswapV3LPFixedWidthRunner
 
 
 __all__ = [
-    "UniswapV3LPFixedWidthFee0Runner",
-    "UniswapV3LPFixedWidthFee1Runner",
+    "UniswapV3LPFixedWidthRunner",
 ]
