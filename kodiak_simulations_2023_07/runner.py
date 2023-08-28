@@ -127,7 +127,6 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         # pull principal from existing position
         remove_liquidity_from_lp_position(
             mock_manager,
-            mock_pool,
             self.backtester,
             self._token_id,
             self.liquidity,

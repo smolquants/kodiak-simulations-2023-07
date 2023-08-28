@@ -41,7 +41,7 @@ dependencies = [
   "matplotlib",
   "scipy",
   "notebook==6.5.2",
-  "backtest-ape==0.1.0a12",
+  "backtest-ape==0.1.0a13",
   "coverage[toml]>=6.5",
   "pytest",
 ]
