@@ -1,10 +1,10 @@
-from ast import literal_eval
-
 import click
+import os
+import kodiak_simulations_2023_07
+
+from ast import literal_eval
 from ape import networks
 from typing_inspect import get_origin
-
-import kodiak_simulations_2023_07
 
 
 def main():
@@ -65,7 +65,12 @@ def main():
     start = click.prompt("Start block number", type=int)
     stop = click.prompt("Stop block number", type=int, default=-1)
     step = click.prompt("Step size", type=int, default=1)
+
+    # remove file if already exists at path
     path = f"notebook/results/{runner_cls_name}_{pool_addr}_{runner.tick_width}_{runner.blocks_between_rebalance}_backtest_{start}_{stop}_{step}.csv"
+    if os.path.exists(path):
+        os.remove(path)
+
     if stop < 0:
         stop = None
 
