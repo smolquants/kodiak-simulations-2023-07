@@ -3,7 +3,7 @@ import pandas as pd
 
 from ape import chain
 from backtest_ape.uniswap.v3 import UniswapV3LPBaseRunner
-from backtest_ape.uniswap.v3.lp.mgmt import remove_liquidity_from_lp_position
+from backtest_ape.uniswap.v3.lp.mgmt import mint_lp_position, remove_liquidity_from_lp_position
 from typing import Any, ClassVar, List, Mapping
 
 from .utils import get_sqrt_ratio_at_tick, get_amounts_for_liquidity
@@ -135,8 +135,10 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         )
 
         # mint a new position after "rebalancing" liquidity
-        self.tick_lower = state["slot0"].tick - self.tick_width // 2
-        self.tick_upper = state["slot0"].tick + self.tick_width // 2
+        tick_lower, tick_upper = self._calculate_lp_ticks(state)
+        self.tick_lower = tick_lower
+        self.tick_upper = tick_upper
+
         (amount0_desired, amount1_desired) = get_amounts_for_liquidity(
             get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
             get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
@@ -144,37 +146,36 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
             self.liquidity,
         )
 
-        # TODO: fix below to use helper functions for univ3 lp
-
         # mint or burn tokens from backtester to "rebalance"
         # @dev assumes infinite external liquidity for pair (and zero fees)
         del_amount0 = amount0_desired - mock_tokens[0].balanceOf(self.backtester.address)
         del_amount1 = amount1_desired - mock_tokens[1].balanceOf(self.backtester.address)
 
         targets = [mock_tokens[0].address, mock_tokens[1].address]
-        datas = []
-        datas[0] = ecosystem.encode_transaction(
-            mock_tokens[0].address,
-            mock_tokens[0].mint.abis[0],
-            self.backtester.address,
-            del_amount0,
-        ).data if del_amount0 > 0 else ecosystem.encode_transaction(
-            mock_tokens[0].address,
-            mock_tokens[0].burn.abis[0],
-            self.backtester.address,
-            -del_amount0,
-        ).data
-        datas[1] = ecosystem.encode_transaction(
-            mock_tokens[1].address,
-            mock_tokens[1].mint.abis[0],
-            self.backtester.address,
-            del_amount1,
-        ).data if del_amount1 > 0 else ecosystem.encode_transaction(
-            mock_tokens[1].address,
-            mock_tokens[1].burn.abis[0],
-            self.backtester.address,
-            -del_amount1
-        ).data
+        datas = [
+            ecosystem.encode_transaction(
+                mock_tokens[0].address,
+                mock_tokens[0].mint.abis[0],
+                self.backtester.address,
+                del_amount0,
+            ).data if del_amount0 > 0 else ecosystem.encode_transaction(
+                mock_tokens[0].address,
+                mock_tokens[0].burn.abis[0],
+                self.backtester.address,
+                -del_amount0,
+            ).data,
+            ecosystem.encode_transaction(
+                mock_tokens[1].address,
+                mock_tokens[1].mint.abis[0],
+                self.backtester.address,
+                del_amount1,
+            ).data if del_amount1 > 0 else ecosystem.encode_transaction(
+                mock_tokens[1].address,
+                mock_tokens[1].burn.abis[0],
+                self.backtester.address,
+                -del_amount1
+            ).data
+        ]
         values = [0, 0]
         self.backtester.multicall(targets, datas, values, sender=self.acc)
 
@@ -182,28 +183,14 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         self.amount1 = amount1_desired
 
         # mint the lp position
-        mint_params = (
-            mock_tokens[0].address,  # token0
-            mock_tokens[1].address,  # token1
-            mock_pool.fee(),
-            self.tick_lower,
-            self.tick_upper,
-            amount0_desired,
-            amount1_desired,
-            0,
-            0,
-            self.backtester.address,
-            chain.blocks.head.timestamp + 86400,
+        mint_lp_position(
+            mock_manager,
+            mock_pool,
+            self.backtester,
+            [self.tick_lower, self.tick_upper],
+            [self.amount0, self.amount1],
+            self.acc,
         )
-        self.backtester.execute(
-            mock_manager.address,
-            ecosystem.encode_transaction(
-                mock_manager.address, mock_manager.mint.abis[0], mint_params
-            ).data,
-            0,
-            sender=self.acc,
-        )
-
         self._token_id = self.backtester.count() + 1
         self.liquidity = self._get_position_liquidity(self._token_id)
 
