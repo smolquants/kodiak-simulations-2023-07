@@ -75,7 +75,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         tick_upper = tick + self.tick_width // 2
         return (tick_lower, tick_upper)
 
-    def init_mocks_state(self, state: Mapping):
+    def init_mocks_state(self, number: int, state: Mapping):
         """
         Overrides UniswapV3LPRunner to use tick width and store liquidity contribution by LP.
 
@@ -97,7 +97,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         self.amount0 = amount0_desired
         self.amount1 = amount1_desired
 
-        super().init_mocks_state(state)
+        super().init_mocks_state(number, state)
 
         # store the actual liquidity minted
         self.liquidity = self._get_position_liquidity(self._token_id)
