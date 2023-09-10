@@ -41,15 +41,11 @@ def main():
 
         # confirm prompt if Optional
         if field.default is None:
-            if not click.confirm(
-                f"Runner kwarg ({name}) defaults to None. Do you want to input a value?"
-            ):
+            if not click.confirm(f"Runner kwarg ({name}) defaults to None. Do you want to input a value?"):
                 kwargs[name] = field.default
                 continue
 
-        value = click.prompt(
-            f"Runner kwarg ({name})", default=field.default, type=type_
-        )
+        value = click.prompt(f"Runner kwarg ({name})", default=field.default, type=type_)
 
         # parse field value from str if not base type
         if type_origin is not None:

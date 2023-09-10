@@ -1,3 +1,4 @@
+import click
 import os
 import pandas as pd
 
@@ -40,20 +41,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
             token_id (int): Token ID of the LP position
         """
         manager = self._mocks["manager"]
-        (
-            _,
-            _,
-            _,
-            _,
-            _,
-            _,
-            _,
-            liquidity,
-            _,
-            _,
-            _,
-            _
-        ) = manager.positions(token_id)
+        (_, _, _, _, _, _, _, liquidity, _, _, _, _) = manager.positions(token_id)
         return liquidity
 
     def _calculate_lp_ticks(self, state: Mapping) -> (int, int):
@@ -66,9 +54,11 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         """
         # get the closest available liquidity tick
         remainder = state["slot0"].tick % self._tick_spacing
-        tick = state["slot0"].tick - remainder \
-            if remainder < self._tick_spacing // 2 \
+        tick = (
+            state["slot0"].tick - remainder
+            if remainder < self._tick_spacing // 2
             else state["slot0"].tick + (self._tick_spacing - remainder)
+        )
 
         # fixed width straddles closest tick to current state
         tick_lower = tick - self.tick_width // 2
@@ -116,6 +106,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         elif number < self._block_rebalance_last + self.blocks_between_rebalance:
             return
 
+        click.echo(f"Rebalancing strategy at block {number} ...")
         self._block_rebalance_last = number
 
         # some needed local vars
@@ -137,6 +128,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         tick_lower, tick_upper = self._calculate_lp_ticks(state)
         self.tick_lower = tick_lower
         self.tick_upper = tick_upper
+        click.echo(f"Updated strategy ticks at block {number}: ({self.tick_lower}, {self.tick_upper})")
 
         (amount0_desired, amount1_desired) = get_amounts_for_liquidity(
             get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
@@ -157,7 +149,9 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
                 mock_tokens[0].mint.abis[0],
                 self.backtester.address,
                 del_amount0,
-            ).data if del_amount0 > 0 else ecosystem.encode_transaction(
+            ).data
+            if del_amount0 > 0
+            else ecosystem.encode_transaction(
                 mock_tokens[0].address,
                 mock_tokens[0].burn.abis[0],
                 self.backtester.address,
@@ -168,12 +162,11 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
                 mock_tokens[1].mint.abis[0],
                 self.backtester.address,
                 del_amount1,
-            ).data if del_amount1 > 0 else ecosystem.encode_transaction(
-                mock_tokens[1].address,
-                mock_tokens[1].burn.abis[0],
-                self.backtester.address,
-                -del_amount1
             ).data
+            if del_amount1 > 0
+            else ecosystem.encode_transaction(
+                mock_tokens[1].address, mock_tokens[1].burn.abis[0], self.backtester.address, -del_amount1
+            ).data,
         ]
         values = [0, 0]
         self.backtester.multicall(targets, datas, values, sender=self.acc)
@@ -192,6 +185,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         )
         self._token_id = self.backtester.count() + 1
         self.liquidity = self._get_position_liquidity(self._token_id)
+        click.echo(f"Updated liquidity at block {number}: {self.liquidity}")
 
         # store token id in backtester
         self.backtester.push(self._token_id, sender=self.acc)
@@ -211,15 +205,19 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         for i, value in enumerate(values):
             data[f"values{i}"] = value
 
-        data.update({
-            "sqrtPriceX96": state["slot0"].sqrtPriceX96,
-            "tick": state["slot0"].tick,
-            "liquidity": state["liquidity"],
-            "position_token_id": self._token_id,
-            "position_liquidity": self.liquidity,
-            "position_tick_lower": self.tick_lower,
-            "position_tick_upper": self.tick_upper,
-        })
+        data.update(
+            {
+                "sqrtPriceX96": state["slot0"].sqrtPriceX96,
+                "tick": state["slot0"].tick,
+                "liquidity": state["liquidity"],
+                "position_token_id": self._token_id,
+                "position_liquidity": self.liquidity,
+                "position_tick_lower": self.tick_lower,
+                "position_tick_upper": self.tick_upper,
+                "position_amount0": self.amount0,
+                "position_amount1": self.amount1,
+            }
+        )
 
         header = not os.path.exists(path)
         df = pd.DataFrame(data={k: [v] for k, v in data.items()})
