@@ -29,7 +29,7 @@ def main():
     runner_cls = getattr(kodiak_simulations_2023_07, runner_cls_name)
 
     # prompt user for fields on runner to init with
-    skip_names = ["tick_lower", "tick_upper", "amount0", "amount1"]
+    skip_names = ["tick_lower", "tick_upper", "liquidity", "amount0", "amount1"]
     kwargs = {}
     for name, field in runner_cls.__fields__.items():
         if name in skip_names:
@@ -52,6 +52,12 @@ def main():
             value = literal_eval(value)
 
         kwargs[name] = value
+
+    liq_input = click.prompt(
+        "Input amount0, amount1, or liquidity?",
+        type=click.Choice(["liquidity", "amount0", "amount1"], case_sensitive=False),
+    )
+    kwargs[liq_input] = click.prompt(f"{liq_input}", default=0, type=int)
 
     # setup runner
     runner = runner_cls(**kwargs)

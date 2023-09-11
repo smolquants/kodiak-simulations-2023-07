@@ -19,3 +19,12 @@ def get_amounts_for_liquidity(
     amount0 = get_amount0_for_liquidity(sqrt_ratio_x96, sqrt_ratio_b_x96, liquidity)
     amount1 = get_amount1_for_liquidity(sqrt_ratio_a_x96, sqrt_ratio_x96, liquidity)
     return (amount0, amount1)
+
+
+def get_liquidity_for_amount0(sqrt_ratio_a_x96: int, sqrt_ratio_b_x96: int, amount0: int) -> int:
+    intermediate = (sqrt_ratio_a_x96 * sqrt_ratio_b_x96) // (1 << 96)
+    return (amount0 * intermediate) // (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
+
+
+def get_liquidity_for_amount1(sqrt_ratio_a_x96: int, sqrt_ratio_b_x96: int, amount1: int) -> int:
+    return (amount1 * (1 << 96)) // (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
