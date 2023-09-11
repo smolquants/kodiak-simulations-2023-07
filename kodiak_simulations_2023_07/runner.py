@@ -7,7 +7,12 @@ from backtest_ape.uniswap.v3 import UniswapV3LPBaseRunner
 from backtest_ape.uniswap.v3.lp.mgmt import mint_lp_position
 from backtest_ape.uniswap.v3.lp.setup import approve_mock_tokens, mint_mock_tokens
 
-from .utils import get_sqrt_ratio_at_tick, get_amounts_for_liquidity
+from .utils import (
+    get_sqrt_ratio_at_tick,
+    get_amounts_for_liquidity,
+    get_liquidity_for_amount0,
+    get_liquidity_for_amount1,
+)
 
 
 # fixed tick width lp runner classes for backtesting
@@ -28,6 +33,9 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         tick spacing.
         """
         super().__init__(**data)
+
+        if self.liquidity == 0 and (self.amount0 == 0 and self.amount1 == 0):
+            raise ValueError("both self.liquidity and self.amounts == 0")
 
         pool = self._refs["pool"]
         self._tick_spacing = pool.tickSpacing()
@@ -84,14 +92,44 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         self.tick_lower = tick_lower
         self.tick_upper = tick_upper
 
-        (amount0_desired, amount1_desired) = get_amounts_for_liquidity(
-            get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
-            get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
-            get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
-            self.liquidity,
-        )
-        self.amount0 = amount0_desired
-        self.amount1 = amount1_desired
+        # calc missing attrs based on input given
+        if self.liquidity != 0:
+            (amount0_desired, amount1_desired) = get_amounts_for_liquidity(
+                get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
+                get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
+                get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
+                self.liquidity,
+            )
+            self.amount0 = amount0_desired
+            self.amount1 = amount1_desired
+        elif self.amount0 != 0 and self.amount1 == 0:
+            liquidity = get_liquidity_for_amount0(
+                get_sqrt_ratio_at_tick(state["slot0"].tick),
+                get_sqrt_ratio_at_tick(self.tick_upper),
+                self.amount0,
+            )
+            (_, amount1_desired) = get_amounts_for_liquidity(
+                get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
+                get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
+                get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
+                liquidity,
+            )
+            self.liquidity = liquidity
+            self.amount1 = amount1_desired
+        elif self.amount1 != 0 and self.amount0 == 0:
+            liquidity = get_liquidity_for_amount1(
+                get_sqrt_ratio_at_tick(self.tick_lower),
+                get_sqrt_ratio_at_tick(state["slot0"].tick),
+                self.amount1,
+            )
+            (amount0_desired, _) = get_amounts_for_liquidity(
+                get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
+                get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
+                get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
+                liquidity,
+            )
+            self.liquidity = liquidity
+            self.amount0 = amount0_desired
 
         # reset ref state fetch given ticks stored
         state = self.get_refs_state(number)
@@ -111,7 +149,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         mint_mock_tokens(
             mock_tokens,
             self.backtester,
-            [self.amount0, self.amount1],
+            [self.amount0 * 1000, self.amount1 * 1000],  # mint more tokens than needed
             self.acc,
         )
 
