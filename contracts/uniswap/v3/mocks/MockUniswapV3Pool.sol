@@ -22,11 +22,15 @@ contract MockUniswapV3Pool is UniswapV3Pool, Setter {
         feeGrowthGlobal1X128 = _feeGrowthGlobal1X128;
     }
 
-    function setFeeGrowthOutsideX128(
+    function setTicks(
         int24 _tick,
+        uint128 _liquidityGross,
+        int128 _liquidityNet,
         uint256 _feeGrowthOutside0X128,
         uint256 _feeGrowthOutside1X128
     ) external {
+        ticks[_tick].liquidityGross = _liquidityGross;
+        ticks[_tick].liquidityNet = _liquidityNet;
         ticks[_tick].feeGrowthOutside0X128 = _feeGrowthOutside0X128;
         ticks[_tick].feeGrowthOutside1X128 = _feeGrowthOutside1X128;
     }

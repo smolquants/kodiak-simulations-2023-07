@@ -9,7 +9,7 @@ import {MockPositionValue as PositionValue} from "./uniswap/v3/mocks/libraries/M
 /// @notice Backtests principal, fee accumulation of an LP position in pool in both (token0, token1)
 contract UniswapV3LPFullBacktest is UniswapV3LPBacktest {
     constructor(address _manager) UniswapV3LPBacktest(_manager) {}
-    
+
     /// @notice Reports the principal, fee (token0, token1) values of the LP tokens owned by this contract
     /// @return values_ The current (token0, token1) principal, fee of the LP tokens owned by this contract
     function values() public view virtual override returns (uint256[] memory values_) {

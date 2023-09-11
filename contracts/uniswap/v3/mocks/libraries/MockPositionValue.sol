@@ -72,10 +72,7 @@ library MockPositionValue {
     /// @param tokenId The tokenId of the token for which to get the total fees owed
     /// @return amount0 The amount of fees owed in token0
     /// @return amount1 The amount of fees owed in token1
-    function fees(
-        address manager,
-        uint256 tokenId
-    ) internal view returns (uint256 amount0, uint256 amount1) {
+    function fees(address manager, uint256 tokenId) internal view returns (uint256 amount0, uint256 amount1) {
         INonfungiblePositionManager positionManager = INonfungiblePositionManager(manager);
         (
             ,
