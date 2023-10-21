@@ -41,5 +41,5 @@ def main():
     sigma = params[-1] / np.sqrt(t)
     mu = mu_p + sigma**2 / 2
 
-    click.echo("Drift per block (mu):", mu)
-    click.echo("Volatility per block (sigma):", sigma)
+    click.echo("Log-price per block drift (mu):", mu)
+    click.echo("Log-price per block volatility (sigma):", sigma)
