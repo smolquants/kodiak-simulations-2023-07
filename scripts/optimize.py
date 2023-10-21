@@ -46,7 +46,7 @@ def rho(delta: float, mu: float, sigma: float, tau: float, ef: float, el: float)
     _m = m(mu, tau)
     _s = s(sigma, tau)
 
-    # Principal before rebalance swap (rho_1)
+    # Principal before rebalance
     _rho_1a = (1 + np.exp(delta / 2)) * (np.exp(_m) * norm.cdf(_dm - _s) + 1 - norm.cdf(_dp))
     _rho_1b = (2 * np.exp((_m - _s**2 / 4) / 2) / (1 - np.exp(-delta / 2))) * (
         norm.cdf(_dp - _s / 2) - norm.cdf(_dm - _s / 2)
@@ -138,7 +138,7 @@ def main():
 
     # ask user for uni v3 pool data for price history, volume, current liquidity conditions
     # @dev must conform to univ3 core abi
-    pool_addr = click.prompt("Pool addr", case_sensitive=False)
+    pool_addr = click.prompt("Pool address", case_sensitive=False)
     pool = Contract(pool_addr)
 
     # get the existing liquidity conditions
