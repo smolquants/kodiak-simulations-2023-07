@@ -184,5 +184,7 @@ def main():
     # use sigma * sqrt(tau) as initial guess
     click.echo("Optimizing EV with respect to tick width ...")
     x0 = s(sigma, tau)
-    delta_c, ev_c, _, _, _, _ = optimize.fmin(-ev, x0)
-    click.echo(f"Tick width delta={delta_c} maximizes LP expected value at EV={ev_c}.")
+    res = optimize.minimize(-ev, x0)
+
+    click.echo(res)
+    click.echo(f"Tick width delta={res.x} maximizes LP expected value at EV={res.fun}.")
