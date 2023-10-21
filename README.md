@@ -40,6 +40,8 @@ Scripts related to determining the optimal tick width for the LP to use are (in 
 - `scripts/fit.py`
 - `scripts/optimize.py`
 
+These rely on [`ape-foundry`](https://github.com/ApeWorX/ape-foundry) mainnet-fork functionality.
+
 Run the query script to gather and store historical price data from a specified spot pool
 
 ```sh
@@ -72,10 +74,38 @@ Probability plot saved: notebook/data/price_0x88e6A0c2dDD26FEEb64F039a2c41296FcB
 Histogram plot saved: notebook/data/price_0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640_13143698_18399698_7200_hist.png
 ```
 
-The returned `mu` (drift) and `sigma` (volatility) parameters will be used as inputs to the tick width optimization script.
+The returned drift `[mu]` and volatility `[sigma]` parameters will be used as inputs to the tick width optimization script.
 
 You shouldn't have to run query and fit scripts that frequently if enough historical price data was fetched for the pool,
 given the assumed nature of the price process.
+
+Then run the optimization script
+
+```sh
+(kodiak-simulations-2023-07) ape run optimize
+INFO: Starting 'anvil' process.
+You are connected to provider network ethereum:mainnet-fork:foundry.
+Start block for LP [-1]:
+Pool address: 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640
+Pool liquidity (L): 28430016274770191340
+Pool sqrt price (sqrtPriceX96): 1961775314387177618147301520538151
+Pool fee (f): 0.0005
+Pool tick spacing in natural log terms (delta_min): 0.0009999500033330045
+Rebalance period in blocks (tau): 50400
+Avg fees from fee growth with token0 in (theta0): 6.0807751389968785e-09
+Avg fees from fee growth with token1 in (theta1): 6.0092596175487544e-09
+Avg fees per unit of virtual liquidity over last rebalance period (theta): 6.045017378272817e-09
+Amount of token1 to LP: 1000000000000000000000
+Liquidity to deploy per unit of virtual liquidity (l): 0.0014205391588462263
+Log-price per block drift (mu): 2.6549742469970873e-07
+Log-price per block volatility (sigma): 0.0004546440886143422
+Minimum theta for +EV: 2.5874359315994352e-08
+WARNING: Not enough fees over last rebalance period for +EV LPing
+Proceed anyway? [y/N]: y
+Optimizing EV with respect to tick width ...
+```
+
+which will output the optimal tick width and expected yield to console.
 
 
 ### Backtester

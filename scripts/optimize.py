@@ -102,6 +102,7 @@ def psi(delta: float, mu: float, sigma: float, tau: float, theta: float, el: flo
     Expected value of accumulated fees at end of rebalance period per unit of amount1.
     """
 
+    # TODO: fix so not integral but expression as causing issues for minimization (i.e. solve integral)
     def _integrand(_t: float) -> float:
         _m = m(mu, tau)  # should be tau here since selling fees at end of rebalance period
         _dp = dp(delta, mu, sigma, _t)
@@ -134,7 +135,9 @@ def main():
         raise ValueError("not connected to mainnet-fork.")
 
     # get last block
-    last_block_number = chain.blocks.head.number
+    block_number = click.prompt("Start block for LP", type=int, default=-1)
+    if block_number < 0:
+        block_number = chain.blocks.head.number  # last block number is default
 
     # ask user for uni v3 pool data for price history, volume, current liquidity conditions
     # @dev must conform to univ3 core abi
@@ -142,20 +145,27 @@ def main():
     pool = Contract(pool_addr)
 
     # get the existing liquidity conditions
-    liquidity = pool.liquidity(block_identifier=last_block_number)
-    sqrt_price_x96 = pool.slot0(block_identifier=last_block_number).sqrtPriceX96
+    liquidity = pool.liquidity(block_identifier=block_number)
+    sqrt_price_x96 = pool.slot0(block_identifier=block_number).sqrtPriceX96
     ef = pool.fee() / 1e6
+    delta_min = np.log(1.0001 ** pool.tickSpacing())
+    click.echo(f"Pool liquidity (L): {liquidity}")
+    click.echo(f"Pool sqrt price (sqrtPriceX96): {sqrt_price_x96}")
+    click.echo(f"Pool fee (f): {ef}")
+    click.echo(f"Pool tick spacing in natural log terms (delta_min): {delta_min}")
 
     # get avg fee revenues over last rebalance period
     tau = click.prompt("Rebalance period in blocks (tau)", type=int)
 
-    fee_growth0_x128_start = pool.feeGrowthGlobal0X128(block_identifier=last_block_number - tau)
-    fee_growth0_x128_end = pool.feeGrowthGlobal0X128(block_identifier=last_block_number)
+    fee_growth0_x128_start = pool.feeGrowthGlobal0X128(block_identifier=block_number - tau)
+    fee_growth0_x128_end = pool.feeGrowthGlobal0X128(block_identifier=block_number)
     theta0 = ((fee_growth0_x128_end - fee_growth0_x128_start) * sqrt_price_x96) / (tau * (1 << 224))
+    click.echo(f"Avg fees from fee growth with token0 in (theta0): {theta0}")
 
-    fee_growth1_x128_start = pool.feeGrowthGlobal0X128(block_identifier=last_block_number - tau)
-    fee_growth1_x128_end = pool.feeGrowthGlobal0X128(block_identifier=last_block_number)
+    fee_growth1_x128_start = pool.feeGrowthGlobal1X128(block_identifier=block_number - tau)
+    fee_growth1_x128_end = pool.feeGrowthGlobal1X128(block_identifier=block_number)
     theta1 = (fee_growth1_x128_end - fee_growth1_x128_start) / (tau * sqrt_price_x96 * (1 << 32))
+    click.echo(f"Avg fees from fee growth with token1 in (theta1): {theta1}")
 
     theta = (theta0 + theta1) / 2
     click.echo(f"Avg fees per unit of virtual liquidity over last rebalance period (theta): {theta}")
@@ -167,8 +177,8 @@ def main():
 
     # ask user for per block drift, vol of pool price
     # @dev use fit.py script to determine
-    mu = click.prompt("Log-price per block drift (mu)", type=int)
-    sigma = click.prompt("Log-price per block volatility (sigma)", type=int)
+    mu = click.prompt("Log-price per block drift (mu)", type=float)
+    sigma = click.prompt("Log-price per block volatility (sigma)", type=float)
 
     theta_min = (sigma**2) * (el + 1) / 8
     click.echo(f"Minimum theta for +EV: {theta_min}")
@@ -178,13 +188,17 @@ def main():
             return
 
     # define EV function to optimize wrt tick width
+    # @dev return negative as looking for maximum via scipy.optimize.minimize
     def ev(delta: float) -> float:
-        return rho(delta, mu, sigma, tau, ef, el) + psi(delta, mu, sigma, tau, theta, el)
+        return -(rho(delta, mu, sigma, tau, ef, el) + psi(delta, mu, sigma, tau, theta, el))
 
     # use sigma * sqrt(tau) as initial guess
     click.echo("Optimizing EV with respect to tick width ...")
     x0 = s(sigma, tau)
-    res = optimize.minimize(-ev, x0)
+    res = optimize.minimize(ev, x0, bounds=[(delta_min, None)])
 
+    y = -ev(res.x) / 2 - 1
     click.echo(f"Result from scipy.optimize.minimize: {res}")
-    click.echo(f"Tick width delta={res.x} maximizes LP expected value at EV={res.fun}.")
+    click.echo(f"Optimal tick width (delta): {res.x}")
+    click.echo(f"Expected value at optimal tick width (E[V(tau)/V(0)]): {-ev(res.x)/2}")
+    click.echo(f"Expected yield at optimal tick width (E[V(tau)/V(0)-1]): {y}")
