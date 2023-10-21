@@ -138,7 +138,7 @@ def main():
 
     # ask user for uni v3 pool data for price history, volume, current liquidity conditions
     # @dev must conform to univ3 core abi
-    pool_addr = click.prompt("Pool address", case_sensitive=False)
+    pool_addr = click.prompt("Pool address", type=str)
     pool = Contract(pool_addr)
 
     # get the existing liquidity conditions
@@ -158,12 +158,12 @@ def main():
     theta1 = (fee_growth1_x128_end - fee_growth1_x128_start) / (tau * sqrt_price_x96 * (1 << 32))
 
     theta = (theta0 + theta1) / 2
-    click.echo("Avg fees per unit of virtual liquidity over last rebalance period (theta):", theta)
+    click.echo(f"Avg fees per unit of virtual liquidity over last rebalance period (theta): {theta}")
 
     # ask user for amount of liquidity to deploy
     amount1 = click.prompt("Amount of token1 to LP", type=int)
     el = (amount1 * (1 << 96)) / (liquidity * sqrt_price_x96)
-    click.echo("Liquidity to deploy per unit of virtual liquidity (l):", el)
+    click.echo(f"Liquidity to deploy per unit of virtual liquidity (l): {el}")
 
     # ask user for per block drift, vol of pool price
     # @dev use fit.py script to determine
@@ -171,7 +171,7 @@ def main():
     sigma = click.prompt("Log-price per block volatility (sigma)", type=int)
 
     theta_min = (sigma**2) * (el + 1) / 8
-    click.echo("Minimum theta for +EV:", theta_min)
+    click.echo(f"Minimum theta for +EV: {theta_min}")
     if theta < theta_min:
         click.echo("WARNING: Not enough fees over last rebalance period for +EV LPing")
         if not click.confirm("Proceed anyway?"):
@@ -186,5 +186,5 @@ def main():
     x0 = s(sigma, tau)
     res = optimize.minimize(-ev, x0)
 
-    click.echo(res)
+    click.echo(f"Result from scipy.optimize.minimize: {res}")
     click.echo(f"Tick width delta={res.x} maximizes LP expected value at EV={res.fun}.")

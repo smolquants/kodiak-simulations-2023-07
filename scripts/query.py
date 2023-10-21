@@ -24,7 +24,7 @@ def main():
 
     # ask user for uni v3 pool data
     # @dev must conform to univ3 core abi
-    pool_addr = click.prompt("Pool address", case_sensitive=False)
+    pool_addr = click.prompt("Pool address", type=str)
     pool = Contract(pool_addr)
 
     # ask user for output file path, start, stop, step
@@ -45,7 +45,7 @@ def main():
         # get the sqrt price data at block
         slot0 = pool.slot0(block_identifier=block)
         row = {'block_number': [block], 'sqrt_price_x96': [slot0.sqrtPriceX96]}
-        click.echo(f"Pool slot0.sqrtPriceX96 at block {block}:", slot0.sqrtPriceX96)
+        click.echo(f"Pool slot0.sqrtPriceX96 at block {block}: {slot0.sqrtPriceX96}")
 
         # convert to pdf dataframe then append to file
         df = pd.DataFrame(data=row)

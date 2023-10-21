@@ -32,6 +32,54 @@ Then launch [`ape-notebook`](https://github.com/ApeWorX/ape-notebook)
 
 ## Scripts
 
+### Optimizer
+
+Scripts related to determining the optimal tick width for the LP to use are (in intended order):
+
+- `scripts/query.py`
+- `scripts/fit.py`
+- `scripts/optimize.py`
+
+Run the query script to gather and store historical price data from a specified spot pool
+
+```sh
+(kodiak-simulations-2023-07) ape run query
+INFO: Starting 'anvil' process.
+You are connected to provider network ethereum:mainnet-fork:foundry.
+Pool address: 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640
+Path to write price history csv: notebook/data/price_0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640_13143698_18399698_7200.csv
+Start block: 13143698
+Stop block [-1]: 18399698
+Step (blocks between queries) [1]: 7200
+Querying price from block 13143698 to block 18399698 with step size 7200 ...
+Processing block 13143698 ...
+Pool slot0.sqrtPriceX96 at block 13143698: 1292692512533636681812260363304234
+```
+
+Fit the gathered data to a [GBM](https://en.wikipedia.org/wiki/Geometric_Brownian_motion) price process
+
+```sh
+(kodiak-simulations-2023-07) ape run fit
+INFO: Starting 'anvil' process.
+Path to price history csv: notebook/data/price_0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640_13143698_18399698_7200.csv
+Fitting log-price history to GBM ...
+Returned fit params for candles in csv: (0.0011674569675148257, 0.03857783017026948)
+Log-price per block drift (mu): 2.6549742469970873e-07
+Log-price per block volatility (sigma): 0.0004546440886143422
+Saving files ...
+Fit params saved: notebook/data/price_0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640_13143698_18399698_7200_params.csv
+Probability plot saved: notebook/data/price_0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640_13143698_18399698_7200_probplot.png
+Histogram plot saved: notebook/data/price_0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640_13143698_18399698_7200_hist.png
+```
+
+The returned `mu` (drift) and `sigma` (volatility) parameters will be used as inputs to the tick width optimization script.
+
+You shouldn't have to run query and fit scripts that frequently if enough historical price data was fetched for the pool,
+given the assumed nature of the price process.
+
+
+### Backtester
+
 Scripts using backtester contracts rely on [`backtest-ape`](https://github.com/smolquants/backtest-ape) and
 [`ape-foundry`](https://github.com/ApeWorX/ape-foundry) mainnet-fork functionality. These produce backtest results
 for different tick range strategies.
