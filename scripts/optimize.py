@@ -2,7 +2,8 @@ import click
 import numpy as np
 
 from ape import Contract, chain, networks
-from scipy import integrate, optimize
+from scipy import optimize, pi
+from scipy.special import erf
 from scipy.stats import norm
 
 
@@ -101,17 +102,16 @@ def psi(delta: float, mu: float, sigma: float, tau: float, theta: float, el: flo
     """
     Expected value of accumulated fees at end of rebalance period per unit of amount1.
     """
-
-    # TODO: fix so not integral but expression as causing issues for minimization (i.e. solve integral)
-    def _integrand(_t: float) -> float:
-        _m = m(mu, tau)  # should be tau here since selling fees at end of rebalance period
-        _dp = dp(delta, mu, sigma, _t)
-        _dm = dm(delta, mu, sigma, _t)
-        _s = s(sigma, _t)
-        return norm.cdf(_dp) - norm.cdf(_dm) + np.exp(_m) * (np.exp(_dp - _s) - np.exp(_dm - _s))
-
+    # TODO: Fix so not rough approx as below (ignores O(_s**2))
+    _m = m(mu, tau)
+    _dap = delta / (sigma * np.sqrt(tau))
     _factor = theta / (1 - np.exp(-delta / 2) + el)
-    return _factor * integrate.quad(_integrand, 0, tau)[0]  # TODO: check error at index 1
+    _integ = (
+        ((delta / sigma) ** 2 + tau) * erf(_dap / np.sqrt(2))
+        + np.sqrt(2 / pi) * (delta / sigma) * np.sqrt(tau) * np.exp(-((_dap) ** 2) / 2)
+        - (delta / sigma) ** 2
+    )
+    return _factor * _integ * (1 + np.exp(_m))
 
 
 def main():
@@ -146,9 +146,11 @@ def main():
 
     # get the existing liquidity conditions
     liquidity = pool.liquidity(block_identifier=block_number)
-    sqrt_price_x96 = pool.slot0(block_identifier=block_number).sqrtPriceX96
+    slot0 = pool.slot0(block_identifier=block_number)
+    sqrt_price_x96 = slot0.sqrtPriceX96
     ef = pool.fee() / 1e6
-    delta_min = np.log(1.0001 ** pool.tickSpacing())
+    tick_spacing = pool.tickSpacing()
+    delta_min = np.log(1.0001 ** (tick_spacing // 2))
     click.echo(f"Pool liquidity (L): {liquidity}")
     click.echo(f"Pool sqrt price (sqrtPriceX96): {sqrt_price_x96}")
     click.echo(f"Pool fee (f): {ef}")
@@ -180,10 +182,12 @@ def main():
     mu = click.prompt("Log-price per block drift (mu)", type=float)
     sigma = click.prompt("Log-price per block volatility (sigma)", type=float)
 
-    theta_min = (sigma**2) * (el + 1) / 8
-    click.echo(f"Minimum theta for +EV: {theta_min}")
+    theta_min = (el + 1) * sigma**2 / 8
+    click.echo(f"Minimum theta for +EV at infinite tick width (approx): {theta_min}")
     if theta < theta_min:
-        click.echo("WARNING: Not enough fees over last rebalance period for +EV LPing")
+        click.echo(
+            "WARNING: Not enough fees over last rebalance period for +EV LPing at infinite tick width when ignoring drift (approx)."
+        )
         if not click.confirm("Proceed anyway?"):
             return
 
@@ -202,3 +206,14 @@ def main():
     click.echo(f"Optimal tick width (delta): {res.x}")
     click.echo(f"Expected value at optimal tick width (E[V(tau)/V(0)]): {-ev(res.x)/2}")
     click.echo(f"Expected yield at optimal tick width (E[V(tau)/V(0)-1]): {y}")
+
+    delta = res.x
+    remainder = slot0.tick % tick_spacing
+    tick = slot0.tick - remainder if remainder < tick_spacing // 2 else slot0.tick + (tick_spacing - remainder)
+
+    tick_width = int((2 * delta) / np.log(1.0001))
+    tick_lower = tick - tick_width // 2
+    tick_upper = tick + tick_width // 2
+    click.echo(f"Current tick: {slot0.tick}")
+    click.echo(f"Suggested lower tick for next period: {tick_lower}")
+    click.echo(f"Suggested upper tick for next period: {tick_upper}")

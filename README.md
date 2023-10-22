@@ -87,25 +87,41 @@ INFO: Starting 'anvil' process.
 You are connected to provider network ethereum:mainnet-fork:foundry.
 Start block for LP [-1]:
 Pool address: 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640
-Pool liquidity (L): 28430016274770191340
-Pool sqrt price (sqrtPriceX96): 1961775314387177618147301520538151
+Pool liquidity (L): 21222482588437805967
+Pool sqrt price (sqrtPriceX96): 1943643613257695920613088162082351
 Pool fee (f): 0.0005
-Pool tick spacing in natural log terms (delta_min): 0.0009999500033330045
+Pool tick spacing in natural log terms (delta_min): 0.0004999750016664899
 Rebalance period in blocks (tau): 50400
-Avg fees from fee growth with token0 in (theta0): 6.0807751389968785e-09
-Avg fees from fee growth with token1 in (theta1): 6.0092596175487544e-09
-Avg fees per unit of virtual liquidity over last rebalance period (theta): 6.045017378272817e-09
+Avg fees from fee growth with token0 in (theta0): 6.504326568279474e-09
+Avg fees from fee growth with token1 in (theta1): 6.462400985125087e-09
+Avg fees per unit of virtual liquidity over last rebalance period (theta): 6.4833637767022804e-09
 Amount of token1 to LP: 1000000000000000000000
-Liquidity to deploy per unit of virtual liquidity (l): 0.0014205391588462263
+Liquidity to deploy per unit of virtual liquidity (l): 0.0019207319570034528
 Log-price per block drift (mu): 2.6549742469970873e-07
 Log-price per block volatility (sigma): 0.0004546440886143422
-Minimum theta for +EV: 2.5874359315994352e-08
-WARNING: Not enough fees over last rebalance period for +EV LPing
+Minimum theta for +EV at infinite tick width (approx): 2.5887283125403797e-08
+WARNING: Not enough fees over last rebalance period for +EV LPing at infinite tick width when ignoring drift (approx).
 Proceed anyway? [y/N]: y
 Optimizing EV with respect to tick width ...
+Result from scipy.optimize.minimize:   message: CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL
+  success: True
+   status: 0
+      fun: -2.011451230767496
+        x: [ 1.042e+01]
+      nit: 16
+      jac: [-5.551e-06]
+     nfev: 34
+     njev: 17
+ hess_inv: <1x1 LbfgsInvHessProduct with dtype=float64>
+Optimal tick width (delta): [10.422413]
+Expected value at optimal tick width (E[V(tau)/V(0)]): [1.00572562]
+Expected yield at optimal tick width (E[V(tau)/V(0)-1]): [0.00572562]
+Current tick: 202164
+Suggested lower tick for next period: 97931
+Suggested upper tick for next period: 306389
 ```
 
-which will output the optimal tick width and expected yield to console.
+which will output the optimal tick width, expected yield, and recommended lower and upper ticks to console.
 
 
 ### Backtester
