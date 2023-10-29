@@ -1,5 +1,6 @@
 import click
 import numpy as np
+import pandas as pd
 
 from ape import Contract, chain, networks
 from kodiak_simulations_2023_07.optimize import find_optimal_delta
@@ -99,3 +100,22 @@ def main():
     click.echo(f"Current tick: {slot0.tick}")
     click.echo(f"Suggested lower tick for next period: {tick_lower}")
     click.echo(f"Suggested upper tick for next period: {tick_upper}")
+
+    # save to csv
+    path = f"notebook/results/optimize/delta_{pool_addr}_{block_number}_{tau}_{amount1}.csv"
+    data = {
+        "delta": [delta],
+        "value": [value],
+        "yield": [y],
+        "tick_width": [tick_width],
+        "tick": [slot0.tick],
+        "tick_lower": [tick_lower],
+        "tick_upper": [tick_upper],
+        "el": [el],
+        "theta": [theta],
+        "tau": [tau],
+        "mu": [mu],
+        "sigma": [sigma],
+    }
+    df = pd.DataFrame(data=data)
+    df.to_csv(path, index=False)

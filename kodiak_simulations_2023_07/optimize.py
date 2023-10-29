@@ -29,7 +29,7 @@ def find_optimal_delta(
         return -(rho(delta, mu, sigma, tau, ef, el) + psi(delta, mu, sigma, tau, theta, el))
 
     delta_min = np.log(1.0001 ** (tick_spacing // 2))
-    delta_max = MAX_TICK - (MAX_TICK % tick_spacing)  # full tick width given pool tick spacing
+    delta_max = np.log(1.0001 ** (MAX_TICK - (MAX_TICK % tick_spacing)))  # full tick width given pool tick spacing
 
     # use sigma * sqrt(tau) as initial guess
     x0 = s(sigma, tau)
@@ -38,6 +38,6 @@ def find_optimal_delta(
     click.echo("Result from scipy.optimize.minimize ...")
     click.echo(f"{res}")
 
-    delta = res.x if res.success else delta_max
+    delta = res.x[0] if res.success else delta_max
     value = -ev(delta) / 2
     return (delta, value)

@@ -286,7 +286,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         elif number < self._block_rebalance_last + self.blocks_between_rebalance:
             return
 
-        # TODO: implement ...
+        # TODO: implement for remove liquidity then rebalance swap ...
 
     def record(self, path: str, number: int, state: Mapping, values: List[int]):
         """

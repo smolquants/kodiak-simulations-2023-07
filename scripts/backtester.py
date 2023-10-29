@@ -69,7 +69,7 @@ def main():
     step = click.prompt("Step size", type=int, default=1)
 
     # remove file if already exists at path
-    path = f"notebook/results/{runner_cls_name}_{pool_addr}_{runner.tick_width}_{runner.blocks_between_rebalance}_backtest_{start}_{stop}_{step}.csv"
+    path = f"notebook/results/backtest/{runner_cls_name}_{pool_addr}_{runner.tick_width}_{runner.blocks_between_rebalance}_{start}_{stop}_{step}.csv"
     if os.path.exists(path):
         os.remove(path)
 
