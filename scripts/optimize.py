@@ -95,6 +95,8 @@ def main():
     tick = slot0.tick - remainder if remainder < tick_spacing // 2 else slot0.tick + (tick_spacing - remainder)
 
     tick_width = int((2 * delta) / np.log(1.0001))
+    tick_width = tick_spacing * (tick_width // tick_spacing)  # make sure multiple of tick spacing
+
     tick_lower = tick - tick_width // 2
     tick_upper = tick + tick_width // 2
     click.echo(f"Current tick: {slot0.tick}")
