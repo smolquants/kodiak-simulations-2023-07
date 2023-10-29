@@ -2,8 +2,7 @@ import click
 import numpy as np
 
 from ape import Contract, chain, networks
-from kodiak_simulations_2023_07.math import rho, psi, s
-from scipy import optimize
+from kodiak_simulations_2023_07.optimize import find_optimal_delta
 
 
 def main():
@@ -83,23 +82,14 @@ def main():
         if not click.confirm("Proceed anyway?"):
             return
 
-    # define EV function to optimize wrt tick width
-    # @dev return negative as looking for maximum via scipy.optimize.minimize
-    def ev(delta: float) -> float:
-        return -(rho(delta, mu, sigma, tau, ef, el) + psi(delta, mu, sigma, tau, theta, el))
-
-    # use sigma * sqrt(tau) as initial guess
     click.echo("Optimizing EV with respect to tick width ...")
-    x0 = s(sigma, tau)
-    res = optimize.minimize(ev, x0, bounds=[(delta_min, None)])
+    (delta, value) = find_optimal_delta(mu, sigma, tau, ef, el, theta, tick_spacing)
 
-    y = -ev(res.x) / 2 - 1
-    click.echo(f"Result from scipy.optimize.minimize: {res}")
-    click.echo(f"Optimal tick width (delta): {res.x}")
-    click.echo(f"Expected value at optimal tick width (E[V(tau)/V(0)]): {-ev(res.x)/2}")
+    y = value - 1
+    click.echo(f"Optimal tick width (delta): {delta}")
+    click.echo(f"Expected value at optimal tick width (E[V(tau)/V(0)]): {value}")
     click.echo(f"Expected yield at optimal tick width (E[V(tau)/V(0)-1]): {y}")
 
-    delta = res.x
     remainder = slot0.tick % tick_spacing
     tick = slot0.tick - remainder if remainder < tick_spacing // 2 else slot0.tick + (tick_spacing - remainder)
 
