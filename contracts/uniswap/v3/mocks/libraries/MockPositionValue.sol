@@ -110,7 +110,7 @@ library MockPositionValue {
     function _fees(
         INonfungiblePositionManager positionManager,
         FeeParams memory feeParams
-    ) private view returns (uint256 amount0, uint256 amount1) {
+    ) internal view returns (uint256 amount0, uint256 amount1) {
         (uint256 poolFeeGrowthInside0LastX128, uint256 poolFeeGrowthInside1LastX128) = _getFeeGrowthInside(
             IUniswapV3Pool(
                 PoolAddress.computeAddress(
@@ -143,7 +143,7 @@ library MockPositionValue {
         IUniswapV3Pool pool,
         int24 tickLower,
         int24 tickUpper
-    ) private view returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) {
+    ) internal view returns (uint256 feeGrowthInside0X128, uint256 feeGrowthInside1X128) {
         (, int24 tickCurrent, , , , , ) = pool.slot0();
         (, , uint256 lowerFeeGrowthOutside0X128, uint256 lowerFeeGrowthOutside1X128, , , , ) = pool.ticks(tickLower);
         (, , uint256 upperFeeGrowthOutside0X128, uint256 upperFeeGrowthOutside1X128, , , , ) = pool.ticks(tickUpper);
@@ -160,14 +160,5 @@ library MockPositionValue {
             feeGrowthInside0X128 = upperFeeGrowthOutside0X128 - lowerFeeGrowthOutside0X128;
             feeGrowthInside1X128 = upperFeeGrowthOutside1X128 - lowerFeeGrowthOutside1X128;
         }
-    }
-
-    /// @dev to expose inside function for reporting in simple backtest
-    function getFeeGrowthInside(
-        IUniswapV3Pool pool,
-        int24 tickLower,
-        int24 tickUpper
-    ) internal view returns (uint256, uint256) {
-        return _getFeeGrowthInside(pool, tickLower, tickUpper);
     }
 }
