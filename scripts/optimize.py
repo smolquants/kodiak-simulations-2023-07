@@ -106,6 +106,7 @@ def main():
     # save to csv
     path = f"notebook/results/optimize/delta_{pool_addr}_{block_number}_{tau}_{amount1}.csv"
     data = {
+        "number": [block_number],
         "delta": [delta],
         "value": [value],
         "yield": [y],

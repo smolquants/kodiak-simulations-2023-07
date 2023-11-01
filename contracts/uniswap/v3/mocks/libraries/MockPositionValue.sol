@@ -161,4 +161,13 @@ library MockPositionValue {
             feeGrowthInside1X128 = upperFeeGrowthOutside1X128 - lowerFeeGrowthOutside1X128;
         }
     }
+
+    /// @dev to expose inside function for reporting in simple backtest
+    function getFeeGrowthInside(
+        IUniswapV3Pool pool,
+        int24 tickLower,
+        int24 tickUpper
+    ) internal view returns (uint256, uint256) {
+        return _getFeeGrowthInside(pool, tickLower, tickUpper);
+    }
 }
