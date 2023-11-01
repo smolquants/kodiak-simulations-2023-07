@@ -28,3 +28,13 @@ def get_liquidity_for_amount0(sqrt_ratio_a_x96: int, sqrt_ratio_b_x96: int, amou
 
 def get_liquidity_for_amount1(sqrt_ratio_a_x96: int, sqrt_ratio_b_x96: int, amount1: int) -> int:
     return (amount1 * (1 << 96)) // (sqrt_ratio_b_x96 - sqrt_ratio_a_x96)
+
+
+def get_liquidity_for_amounts(
+    sqrt_ratio_x96: int, sqrt_ratio_a_x96: int, sqrt_ratio_b_x96: int, amount0: int, amount1: int
+) -> int:
+    # @dev only implemented for tick_lower <= state.tick <= tick_upper
+    assert sqrt_ratio_a_x96 <= sqrt_ratio_x96 and sqrt_ratio_x96 <= sqrt_ratio_b_x96
+    liquidity0 = get_liquidity_for_amount0(sqrt_ratio_x96, sqrt_ratio_b_x96, amount0)
+    liquidity1 = get_liquidity_for_amount1(sqrt_ratio_a_x96, sqrt_ratio_x96, amount1)
+    return liquidity0 if liquidity0 < liquidity1 else liquidity1

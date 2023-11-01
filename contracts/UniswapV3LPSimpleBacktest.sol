@@ -15,7 +15,8 @@ import {MockPositionValue as PositionValue} from "./uniswap/v3/mocks/libraries/M
 /// @dev Redefined here for access in ape.project
 /// @notice Backtests as simple pass through view on pool state: slot0.sqrtPriceX96, liquidity, feeGrowthGlobalX128
 contract UniswapV3LPSimpleBacktest is UniswapV3LPBacktest {
-    address public immutable pool_;
+    // current pool lping on
+    address public pool_;
 
     // tick lower, upper for lp during period
     int24 public tickLower_;
@@ -28,11 +29,10 @@ contract UniswapV3LPSimpleBacktest is UniswapV3LPBacktest {
     uint256 public feeGrowthInside0X128_;
     uint256 public feeGrowthInside1X128_;
 
-    constructor(address _manager, address _token0, address _token1, uint24 _fee) UniswapV3LPBacktest(_manager) {
-        pool_ = getPool(_token0, _token1, _fee);
-    }
+    constructor(address _manager) UniswapV3LPBacktest(_manager) {}
 
-    function update(int24 _tickLower, int24 _tickUpper, uint128 _liquidity) external {
+    function update(address _pool, int24 _tickLower, int24 _tickUpper, uint128 _liquidity) external {
+        pool_ = _pool;
         tickLower_ = _tickLower;
         tickUpper_ = _tickUpper;
         liquidity_ = _liquidity;

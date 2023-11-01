@@ -48,7 +48,7 @@ class UniswapV3LPFullRunner(UniswapV3LPFixedWidthRunner):
         # calc missing attrs based on input given
         if self.liquidity != 0:
             (amount0_desired, amount1_desired) = get_amounts_for_liquidity(
-                get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
+                state["slot0"].sqrtPriceX96,  # sqrt_ratio_x96
                 get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
                 get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
                 self.liquidity,
@@ -57,12 +57,12 @@ class UniswapV3LPFullRunner(UniswapV3LPFixedWidthRunner):
             self.amount1 = amount1_desired
         elif self.amount0 != 0 and self.amount1 == 0:
             liquidity = get_liquidity_for_amount0(
-                get_sqrt_ratio_at_tick(state["slot0"].tick),
+                state["slot0"].sqrtPriceX96,
                 get_sqrt_ratio_at_tick(self.tick_upper),
                 self.amount0,
             )
             (_, amount1_desired) = get_amounts_for_liquidity(
-                get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
+                state["slot0"].sqrtPriceX96,  # sqrt_ratio_x96
                 get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
                 get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
                 liquidity,
@@ -72,11 +72,11 @@ class UniswapV3LPFullRunner(UniswapV3LPFixedWidthRunner):
         elif self.amount1 != 0 and self.amount0 == 0:
             liquidity = get_liquidity_for_amount1(
                 get_sqrt_ratio_at_tick(self.tick_lower),
-                get_sqrt_ratio_at_tick(state["slot0"].tick),
+                state["slot0"].sqrtPriceX96,
                 self.amount1,
             )
             (amount0_desired, _) = get_amounts_for_liquidity(
-                get_sqrt_ratio_at_tick(state["slot0"].tick),  # sqrt_ratio_x96
+                state["slot0"].sqrtPriceX96,  # sqrt_ratio_x96
                 get_sqrt_ratio_at_tick(self.tick_lower),  # sqrt_ratio_a_x96
                 get_sqrt_ratio_at_tick(self.tick_upper),  # sqrt_ratio_b_x96
                 liquidity,

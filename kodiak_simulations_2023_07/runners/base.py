@@ -10,7 +10,8 @@ from backtest_ape.uniswap.v3 import UniswapV3LPBaseRunner
 class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
     liquidity: int = 0  # liquidity contribution by LP
     tick_width: int = 0  # 2 * delta
-    blocks_between_rebalance: int = 0  # blocks between rebalances (assumes fixed blocktimes)
+    blocks_between_rebalance: int = 0  # tau
+    compound_fees_at_rebalance: bool = False
 
     _tick_spacing: int = 0
     _token_id: int = -1  # current token id
