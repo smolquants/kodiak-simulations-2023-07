@@ -12,6 +12,7 @@ from ..utils import (
 )
 
 
+# TODO: additional runner implementation that calcs optimal tick width each rebalance
 # fixed tick width lp runner class for simple backtesting
 class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
     _backtester_name: ClassVar[str] = "UniswapV3LPSimpleBacktest"
@@ -31,6 +32,25 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
             self.amount0,
             self.amount1,
         )
+
+    def _calculate_position_amounts_after_rebalance(
+        self, state: Mapping, amount0_before: int, amount1_before: int
+    ) -> (int, int):
+        """
+        Calculate position amounts to rebalance to.
+
+        Rebalance condition: price * amount0 == amount1
+
+        Args:
+            state (Mapping): The state of mocks
+        """
+        # TODO: factor in slippage and swap fees
+        price = (int(state["slot0"].sqrtPriceX96) ** 2) // (1 << 192)
+        value1 = amount0_before * price + amount1_before
+
+        amount1 = value1 // 2
+        amount0 = amount1 // price
+        return (amount0, amount1)
 
     def init_mocks_state(self, number: int, state: Mapping):
         """
@@ -116,14 +136,59 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
           - tick_lower = tick_current - tick_width // 2
           - tick_upper = tick_current + tick_width // 2
         """
-        # set block as processed
-        self._last_number_processed = number
+        # reset block processed number
+        self._last_number_processed = 0
 
         if self._block_rebalance_last == 0:
             self._block_rebalance_last = number
+            self._last_number_processed = number
             return
         elif number < self._block_rebalance_last + self.blocks_between_rebalance:
+            self._last_number_processed = number
             return
 
-        # TODO: implement with rebalance logic and compounding fees if specified
-        click.echo("Rebalancing LP position ...")
+        click.echo(f"Rebalancing LP position at block {number} ...")
+        (amount0, amount1) = self.backtester.principal(state["slot0"].sqrtPriceX96)
+        if self.compound_fees_at_rebalance:
+            (fees0, fees1) = self.backtester.fees()
+            amount0 += fees0
+            amount1 += fees1
+
+        (amount0, amount1) = self._calculate_position_amounts_after_rebalance(state, amount0, amount1)
+        self.amount0 = amount0
+        self.amount1 = amount1
+
+        # calculate new tick range to rebalance around
+        tick_lower, tick_upper = self._calculate_lp_ticks(state)
+        self.tick_lower = tick_lower
+        self.tick_upper = tick_upper
+
+        # @dev must recalculate liquidity *after* set rebalanced amounts and new upper, lower ticks
+        self.liquidity = self._calculate_position_liquidity(state)
+
+        click.echo(f"Runner liquidity: {self.liquidity}")
+        click.echo(f"Runner amounts: {(self.amount0, self.amount1)}")
+
+        # reset ref state fetch given ticks stored
+        state = self.get_refs_state(number)
+
+        # set the tick for position manager add liquidity to work properly
+        self.set_mocks_state(state)
+
+        # establish position attributes on backtester contract
+        mock_pool = self._mocks["pool"]
+        self.backtester.update(mock_pool.address, self.tick_lower, self.tick_upper, self.liquidity, sender=self.acc)
+
+        click.echo("Backtester position attributes ...")
+        click.echo(f"ticks: {(self.backtester.tickLower_(), self.backtester.tickUpper_())}")
+        click.echo(
+            f"feeGrowthInside: {(self.backtester.feeGrowthInside0X128_(), self.backtester.feeGrowthInside1X128_())}"
+        )
+        click.echo(f"liquidity: {self.backtester.liquidity_()}")
+
+        # check fee values reset
+        click.echo(f"values: {self.backtester.values()}")
+
+        # set position as rebalanced
+        self._block_rebalance_last = number
+        self._last_number_processed = number
