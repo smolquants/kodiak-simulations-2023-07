@@ -13,7 +13,7 @@ import {MockPositionValue as PositionValue} from "./uniswap/v3/mocks/libraries/M
 
 /// @title Uniswap V3 Liquidity Provider Simple Backtester
 /// @dev Redefined here for access in ape.project
-/// @notice Backtests as simple pass through view on pool state: slot0.sqrtPriceX96, liquidity, feeGrowthGlobalX128
+/// @notice Backtests as simple pass through view on a hypothetical LP position
 contract UniswapV3LPSimpleBacktest is UniswapV3LPBacktest {
     // current pool lping on
     address public pool_;

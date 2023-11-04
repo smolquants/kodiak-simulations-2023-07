@@ -1,6 +1,6 @@
 import click
 
-from typing import ClassVar, Mapping
+from typing import ClassVar, List, Mapping
 
 from .base import UniswapV3LPFixedWidthRunner
 from ..utils import (
@@ -44,12 +44,30 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
         Args:
             state (Mapping): The state of mocks
         """
-        # TODO: factor in slippage and swap fees
+        liquidity = state["liquidity"]
         price = (int(state["slot0"].sqrtPriceX96) ** 2) // (1 << 192)
         value1 = amount0_before * price + amount1_before
+        x1 = (liquidity * state["slot0"].sqrtPriceX96) // (1 << 96)
 
-        amount1 = value1 // 2
-        amount0 = amount1 // price
+        amount1 = value1 // 2  # (1/2) * (dx * p + dy)
+        dx1 = amount1 - amount1_before  # (1/2) * |dx * p - dy|
+        if dx1 == 0:
+            return (amount0_before, amount1_before)
+
+        # correct for fee and second order slippage terms
+        fee = self._refs["pool"].fee()  # in bps
+        _f = fee / 1e6
+        eps1 = int(-abs(dx1) * (_f / 2 + (1 / 2) * abs(dx1) / x1))
+
+        amount1 += eps1
+        amount0 = amount1 // price  # satisfies rebalance condition
+
+        click.echo("Calculating position amounts after rebalance ...")
+        click.echo(f"Amounts (before): {(amount0_before, amount1_before)}")
+        click.echo(f"Amounts (after): {(amount0, amount1)}")
+        click.echo(f"Value (before): {value1}")
+        click.echo(f"Value (after): {amount0 * price + amount1}")
+
         return (amount0, amount1)
 
     def init_mocks_state(self, number: int, state: Mapping):
