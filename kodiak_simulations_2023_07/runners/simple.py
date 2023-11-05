@@ -1,6 +1,6 @@
 import click
 
-from typing import ClassVar, List, Mapping
+from typing import ClassVar, Mapping
 
 from .base import UniswapV3LPFixedWidthRunner
 from ..utils import (
@@ -145,6 +145,30 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
 
         # set block as processed
         self._last_number_processed = number
+
+    def set_mocks_state(self, state: Mapping):
+        """
+        Overrides UniswapV3LPFixedWidthRunner to also refresh backtester LP
+        in case ref lower or upper tick has been initialized since last block
+        processed.
+
+        Args:
+            state (Mapping): The ref state at given block iteration.
+        """
+        super().set_mocks_state(state)
+
+        # TODO: fix so doesn't disregard fees by finding block which ref tick flipped
+        if self._last_number_processed != 0:
+            last_state = self.get_refs_state(self._last_number_processed)
+
+            # "refresh" LP position if one of the ref ticks has been initialized since last block processed
+            lower_changed = (not last_state["tick_info_lower"].initialized) and state["tick_info_lower"].initialized
+            upper_changed = (not last_state["tick_info_upper"].initialized) and state["tick_info_upper"].initialized
+            if lower_changed or upper_changed:
+                mock_pool = self._mocks["pool"]
+                self.backtester.update(
+                    mock_pool.address, self.tick_lower, self.tick_upper, self.liquidity, sender=self.acc
+                )
 
     def update_strategy(self, number: int, state: Mapping):
         """

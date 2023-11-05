@@ -142,13 +142,14 @@ Then run the backtest script
 (kodiak-simulations-2023-07) ape run backtester
 INFO: Starting 'anvil' process.
 You are connected to provider network ethereum:mainnet-fork:foundry.
-Runner type (UniswapV3LPFixedWidthRunner): UniswapV3LPFixedWidthRunner
+Runner type (UniswapV3LPFullRunner, UniswapV3LPSimpleRunner): UniswapV3LPSimpleRunner
 Runner kwarg (ref_addrs) [{}]: {"pool": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640", "manager": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"}
 Runner kwarg (acc_addr) defaults to None. Do you want to input a value? [y/N]: N
-Runner kwarg (tick_width) [0]: 240
+Runner kwarg (tick_width) [0]: 2800
 Runner kwarg (blocks_between_rebalance) [0]: 50400
-Input amount0, amount1, or liquidity? (liquidity, amount0, amount1): amount0
-amount0 [0]: 557807489
+Runner kwarg (compound_fees_at_rebalance) [False]: True
+Input amount0, amount1, or liquidity? (liquidity, amount0, amount1): amount1
+amount1 [0]: 1000000000000000000000
 Start block number: 16219692
 Stop block number [-1]: 16867692
 Step size [1]: 2400

@@ -78,76 +78,30 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         Overrides UniswapV3LPRunner to set based off deltas from prior ref state.
 
         Args:
-            TODO: number (int): The block number of current iteration.
             state (Mapping): The ref state at given block iteration.
         """
         mock_pool = self._mocks["pool"]
-
-        datas = []
-        if self._last_number_processed == 0:
-            # initialize with current state and not deltas
-            datas = [
-                mock_pool.setSqrtPriceX96.as_transaction(state["slot0"].sqrtPriceX96).data,
-                mock_pool.setLiquidity.as_transaction(state["liquidity"]).data,
-                mock_pool.setFeeGrowthGlobalX128.as_transaction(
-                    state["fee_growth_global0_x128"], state["fee_growth_global1_x128"]
-                ).data,
-                mock_pool.setTicks.as_transaction(
-                    self.tick_lower,
-                    state["tick_info_lower"].liquidityGross,
-                    state["tick_info_lower"].liquidityNet,
-                    state["tick_info_lower"].feeGrowthOutside0X128,
-                    state["tick_info_lower"].feeGrowthOutside1X128,
-                ).data,
-                mock_pool.setTicks.as_transaction(
-                    self.tick_upper,
-                    state["tick_info_upper"].liquidityGross,
-                    state["tick_info_upper"].liquidityNet,
-                    state["tick_info_upper"].feeGrowthOutside0X128,
-                    state["tick_info_upper"].feeGrowthOutside1X128,
-                ).data,
-            ]
-        else:
-            # set with deltas from prior ref state
-            prior_state = self.get_refs_state(self._last_number_processed)
-            keys = ["liquidity", "fee_growth_global0_x128", "fee_growth_global1_x128"]
-            deltas = {k: state[k] - prior_state[k] for k in keys}
-
-            # go one level deeper for tick info keys to delta
-            infos = ["tick_info_lower", "tick_info_upper"]
-            attrs = ["liquidityGross", "liquidityNet", "feeGrowthOutside0X128", "feeGrowthOutside1X128"]
-            deltas.update({i: {a: getattr(state[i], a) - getattr(prior_state[i], a) for a in attrs} for i in infos})
-
-            # get current mock state for items would like to add delta to
-            mocks_state = self._get_mocks_state()
-
-            datas = [
-                mock_pool.setSqrtPriceX96.as_transaction(state["slot0"].sqrtPriceX96).data,
-                mock_pool.setLiquidity.as_transaction(mocks_state["liquidity"] + deltas["liquidity"]).data,
-                mock_pool.setFeeGrowthGlobalX128.as_transaction(
-                    mocks_state["fee_growth_global0_x128"] + deltas["fee_growth_global0_x128"],
-                    mocks_state["fee_growth_global1_x128"] + deltas["fee_growth_global1_x128"],
-                ).data,
-                mock_pool.setTicks.as_transaction(
-                    self.tick_lower,
-                    mocks_state["tick_info_lower"].liquidityGross + deltas["tick_info_lower"]["liquidityGross"],
-                    mocks_state["tick_info_lower"].liquidityNet + deltas["tick_info_lower"]["liquidityNet"],
-                    mocks_state["tick_info_lower"].feeGrowthOutside0X128
-                    + deltas["tick_info_lower"]["feeGrowthOutside0X128"],
-                    mocks_state["tick_info_lower"].feeGrowthOutside1X128
-                    + deltas["tick_info_lower"]["feeGrowthOutside1X128"],
-                ).data,
-                mock_pool.setTicks.as_transaction(
-                    self.tick_upper,
-                    mocks_state["tick_info_upper"].liquidityGross + deltas["tick_info_upper"]["liquidityGross"],
-                    mocks_state["tick_info_upper"].liquidityNet + deltas["tick_info_upper"]["liquidityNet"],
-                    mocks_state["tick_info_upper"].feeGrowthOutside0X128
-                    + deltas["tick_info_upper"]["feeGrowthOutside0X128"],
-                    mocks_state["tick_info_upper"].feeGrowthOutside1X128
-                    + deltas["tick_info_upper"]["feeGrowthOutside1X128"],
-                ).data,
-            ]
-
+        datas = [
+            mock_pool.setSqrtPriceX96.as_transaction(state["slot0"].sqrtPriceX96).data,
+            mock_pool.setLiquidity.as_transaction(state["liquidity"]).data,
+            mock_pool.setFeeGrowthGlobalX128.as_transaction(
+                state["fee_growth_global0_x128"], state["fee_growth_global1_x128"]
+            ).data,
+            mock_pool.setTicks.as_transaction(
+                self.tick_lower,
+                state["tick_info_lower"].liquidityGross,
+                state["tick_info_lower"].liquidityNet,
+                state["tick_info_lower"].feeGrowthOutside0X128,
+                state["tick_info_lower"].feeGrowthOutside1X128,
+            ).data,
+            mock_pool.setTicks.as_transaction(
+                self.tick_upper,
+                state["tick_info_upper"].liquidityGross,
+                state["tick_info_upper"].liquidityNet,
+                state["tick_info_upper"].feeGrowthOutside0X128,
+                state["tick_info_upper"].feeGrowthOutside1X128,
+            ).data,
+        ]
         mock_pool.calls(datas, sender=self.acc)
 
     def record(self, path: str, number: int, state: Mapping, values: List[int]):
