@@ -164,6 +164,10 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
             # "refresh" LP position if one of the ref ticks has been initialized since last block processed
             lower_changed = (not last_state["tick_info_lower"].initialized) and state["tick_info_lower"].initialized
             upper_changed = (not last_state["tick_info_upper"].initialized) and state["tick_info_upper"].initialized
+
+            click.echo(f"Tick lower initialized state changed?: {lower_changed}")
+            click.echo(f"Tick upper initialized state changed?: {upper_changed}")
+
             if lower_changed or upper_changed:
                 mock_pool = self._mocks["pool"]
                 self.backtester.update(
@@ -189,6 +193,16 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
             self._last_number_processed = number
             return
 
+        # calculate new tick range to rebalance around
+        # @dev simply keep passively LPing if tick range same and no compounding of fees
+        tick_lower, tick_upper = self._calculate_lp_ticks(state)
+        if self.tick_lower == tick_lower and self.tick_upper == tick_upper and not self.compound_fees_at_rebalance:
+            self._last_number_processed = number
+            return
+
+        self.tick_lower = tick_lower
+        self.tick_upper = tick_upper
+
         click.echo(f"Rebalancing LP position at block {number} ...")
         (amount0, amount1) = self.backtester.principal(state["slot0"].sqrtPriceX96)
         if self.compound_fees_at_rebalance:
@@ -199,11 +213,6 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
         (amount0, amount1) = self._calculate_position_amounts_after_rebalance(state, amount0, amount1)
         self.amount0 = amount0
         self.amount1 = amount1
-
-        # calculate new tick range to rebalance around
-        tick_lower, tick_upper = self._calculate_lp_ticks(state)
-        self.tick_lower = tick_lower
-        self.tick_upper = tick_upper
 
         # @dev must recalculate liquidity *after* set rebalanced amounts and new upper, lower ticks
         self.liquidity = self._calculate_position_liquidity(state)

@@ -2,8 +2,9 @@ import os
 import pandas as pd
 
 from typing import Any, List, Mapping
-
 from backtest_ape.uniswap.v3 import UniswapV3LPBaseRunner
+
+from ..constants import MAX_TICK
 
 
 # fixed tick width lp runner classes for backtesting
@@ -13,7 +14,7 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
     blocks_between_rebalance: int = 0  # tau
     compound_fees_at_rebalance: bool = False
 
-    _tick_spacing: int = 0
+    _tick_spacing: int = 0  # tick width around initial tick
     _token_id: int = -1  # current token id
     _last_number_processed: int = 0
     _block_rebalance_last: int = 0  # last block rebalanced
@@ -41,6 +42,13 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         Args:
             state (Mapping): The state of mocks.
         """
+        # if tick width == 0, then full range LPing
+        if self.tick_width == 0:
+            tick_upper = MAX_TICK - (MAX_TICK % self._tick_spacing)
+            tick_lower = -tick_upper
+            return (tick_lower, tick_upper)
+
+        # otherwise rebalance around current tick
         # get the closest available liquidity tick
         remainder = state["slot0"].tick % self._tick_spacing
         tick = (
