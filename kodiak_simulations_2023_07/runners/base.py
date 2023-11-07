@@ -19,6 +19,9 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
     _last_number_processed: int = 0
     _block_rebalance_last: int = 0  # last block rebalanced
 
+    _fees0_cumulative: int = 0  # tracks cumulative fees in token0
+    _fees1_cumulative: int = 0  # tracks cumulatives fees in token1
+
     def __init__(self, **data: Any):
         """
         Overrides UniswapV3LPRunner to check tick width // 2 is a multiple of pool
@@ -132,12 +135,16 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
                 "sqrtPriceX96": state["slot0"].sqrtPriceX96,
                 "tick": state["slot0"].tick,
                 "liquidity": state["liquidity"],
+                "feeGrowthGlobal0X128": state["fee_growth_global0_x128"],
+                "feeGrowthGlobal1X128": state["fee_growth_global1_x128"],
                 "position_token_id": self._token_id,
                 "position_liquidity": self.liquidity,
                 "position_tick_lower": self.tick_lower,
                 "position_tick_upper": self.tick_upper,
                 "position_amount0": self.amount0,
                 "position_amount1": self.amount1,
+                "position_fees0_cumulative": self._fees0_cumulative,
+                "position_fees1_cumulative": self._fees1_cumulative,
             }
         )
 

@@ -205,8 +205,14 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
 
         click.echo(f"Rebalancing LP position at block {number} ...")
         (amount0, amount1) = self.backtester.principal(state["slot0"].sqrtPriceX96)
+        (fees0, fees1) = self.backtester.fees()
+
+        # add to runner stored cumulative fees
+        self._fees0_cumulative += fees0
+        self._fees1_cumulative += fees1
+
+        # add fees to principal amounts if compound at rebalance
         if self.compound_fees_at_rebalance:
-            (fees0, fees1) = self.backtester.fees()
             amount0 += fees0
             amount1 += fees1
 
