@@ -61,6 +61,13 @@ class UniswapV3LPOptimizedRunner(UniswapV3LPSimpleRunner):
         theta = self._calculate_theta(number, state)
         click.echo(f"Fee volume per unit of external liquidity: {theta}")
 
+        # default to full tick range in theta less than min for +EV LPing
+        theta_min = (el + 1) * self.sigma**2 / 8
+        click.echo(f"Min fee volume per unit of external liquidity for +EV: {theta_min}")
+        if theta <= theta_min:
+            self.tick_width = 0
+            return
+
         (delta, value) = find_optimal_delta(
             self.mu,
             self.sigma,
