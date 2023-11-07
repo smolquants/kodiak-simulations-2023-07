@@ -12,8 +12,7 @@ from ..utils import (
 )
 
 
-# TODO: additional runner implementation that calcs optimal tick width each rebalance
-# fixed tick width lp runner class for simple backtesting
+# Fixed tick width lp runner class for simple backtesting
 class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
     _backtester_name: ClassVar[str] = "UniswapV3LPSimpleBacktest"
 
