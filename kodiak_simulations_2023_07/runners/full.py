@@ -41,7 +41,7 @@ class UniswapV3LPFullRunner(UniswapV3LPFixedWidthRunner):
 
         # TODO: check whether issue minting on manager with fee accounting after set mock state
         # some setup based off initial state
-        tick_lower, tick_upper = self._calculate_lp_ticks(state)
+        tick_lower, tick_upper = self._calculate_lp_ticks(number, state)
         self.tick_lower = tick_lower
         self.tick_upper = tick_upper
 

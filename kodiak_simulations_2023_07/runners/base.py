@@ -1,3 +1,4 @@
+import click
 import os
 import pandas as pd
 
@@ -37,12 +38,13 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         if (self.tick_width // 2) % self._tick_spacing != 0:
             raise ValueError("self.tick_width // 2 not a multiple of pool.tickSpacing")
 
-    def _calculate_lp_ticks(self, state: Mapping) -> (int, int):
+    def _calculate_lp_ticks(self, number: int, state: Mapping) -> (int, int):
         """
         Calculates anticipated tick upper and lower with fixed width around
         current tick.
 
         Args:
+            number (int): The block number used for mock state reference.
             state (Mapping): The state of mocks.
         """
         # if tick width == 0, then full range LPing
@@ -63,6 +65,42 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         # fixed width straddles closest tick to current state
         tick_lower = tick - self.tick_width // 2
         tick_upper = tick + self.tick_width // 2
+
+        # check for next ticks if uninitialized
+        # @dev will widen tick width
+        (tick_lower, tick_upper) = self._find_nearest_lp_ticks(number, tick, tick_lower, tick_upper)
+        return (tick_lower, tick_upper)
+
+    def _find_nearest_lp_ticks(self, number: int, tick: int, tick_lower: int, tick_upper: int) -> (int, int):
+        """
+        Finds nearest ticks to tick upper and lower in case given ticks are uninitialized.
+        Widens the actual tick width LP uses if either tick is uninitialized in reference.
+
+        Args:
+            tick (int): Tick to LP around
+            tick_lower (int): Initial guess for tick lower to LP with
+            tick_upper (int): Initial guess for tick upper to LP with
+        """
+        click.echo(f"Finding nearest initialized ticks to ({tick_lower}, {tick_upper}) at block {number} ...")
+        tick_width = tick_upper - tick_lower
+        pool = self._refs["pool"]
+
+        found = False
+        while not found:
+            click.echo(f"Checking ({tick_lower}, {tick_upper}) at block {number} ...")
+            (_, _, _, _, _, _, _, lower_initialized) = pool.ticks(tick_lower)
+            (_, _, _, _, _, _, _, upper_initialized) = pool.ticks(tick_upper)
+
+            click.echo(f"Lower initialized: {lower_initialized}")
+            click.echo(f"Upper initialized: {upper_initialized}")
+
+            found = lower_initialized and upper_initialized
+            click.echo(f"Found: {found}")
+            if not found:
+                tick_width += 2 * self._tick_spacing
+                tick_lower = tick - tick_width // 2
+                tick_upper = tick + tick_width // 2
+
         return (tick_lower, tick_upper)
 
     def _get_mocks_state(self) -> Mapping:

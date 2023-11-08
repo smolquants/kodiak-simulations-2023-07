@@ -11,6 +11,7 @@ from ..optimize import find_optimal_delta
 class UniswapV3LPOptimizedRunner(UniswapV3LPSimpleRunner):
     mu: float = 0  # GBM drift fit param per block
     sigma: float = 1  # GBM vol fit param per block
+    max_tick_width: int = 0  # max tick width if not full range
 
     def __init__(self, **data: Any):
         """
@@ -27,13 +28,14 @@ class UniswapV3LPOptimizedRunner(UniswapV3LPSimpleRunner):
         over last rebalance period.
         """
         tau = self.blocks_between_rebalance
+        sqrt_price_x96 = state["slot0"].sqrtPriceX96
         last_state = self.get_refs_state(number - tau)
 
-        theta0 = (
-            (state["fee_growth_global0_x128"] - last_state["fee_growth_global0_x128"]) * state["sqrtPriceX96"]
-        ) / (tau * (1 << 224))
+        theta0 = ((state["fee_growth_global0_x128"] - last_state["fee_growth_global0_x128"]) * sqrt_price_x96) / (
+            tau * (1 << 224)
+        )
         theta1 = (state["fee_growth_global1_x128"] - last_state["fee_growth_global1_x128"]) / (
-            tau * state["sqrtPriceX96"] * (1 << 32)
+            tau * sqrt_price_x96 * (1 << 32)
         )
         theta = (theta0 + theta1) / 2
         return theta
@@ -45,11 +47,13 @@ class UniswapV3LPOptimizedRunner(UniswapV3LPSimpleRunner):
         """
         # @dev only works if self.liquidity << state["liquidity"] since then can "include" in state["liquidity"]
         # TODO: fix for any self.liquidity value
+        sqrt_price_x96 = state["slot0"].sqrtPriceX96
+
         el = 0
         if self.amount1 != 0:
-            el = (self.amount1 * (1 << 96)) / (state["liquidity"] * state["sqrtPriceX96"])
+            el = (self.amount1 * (1 << 96)) / (state["liquidity"] * sqrt_price_x96)
         elif self.amount0 != 0:
-            el = (self.amount0 * state["sqrtPriceX96"]) / (state["liquidity"] * (1 << 96))
+            el = (self.amount0 * sqrt_price_x96) / (state["liquidity"] * (1 << 96))
         else:
             raise "Need amount0, amount1 > 0 to optimize"
 
@@ -82,8 +86,17 @@ class UniswapV3LPOptimizedRunner(UniswapV3LPSimpleRunner):
 
         # update tick width ensuring multiple of pool tick spacing
         tick_width = int((2 * delta) / np.log(1.0001))
-        tick_width = self._tick_spacing * (tick_width // self._tick_spacing)
+        tick_width = 2 * self._tick_spacing * (tick_width // (2 * self._tick_spacing))
+        if tick_width == 0:
+            tick_width = 2 * self._tick_spacing
+
         click.echo(f"Optimal tick width: {tick_width}")
+        click.echo(f"Max tick width: {self.max_tick_width}")
+
+        if self.max_tick_width > 0 and tick_width > self.max_tick_width:
+            self.tick_width = 0
+            return
+
         self.tick_width = tick_width
 
     def init_mocks_state(self, number: int, state: Mapping):
