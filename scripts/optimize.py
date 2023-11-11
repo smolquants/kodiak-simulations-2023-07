@@ -76,9 +76,14 @@ def main():
 
     theta_min = (el + 1) * sigma**2 / 8
     click.echo(f"Minimum theta for +EV at infinite tick width (approx): {theta_min}")
+
+    # ask user for rewards APR supplementing fee revenues
+    rewards = click.prompt("Rewards per unit of virtual liquidity (R)", type=float)
+    theta += rewards
+
     if theta < theta_min:
         click.echo(
-            "WARNING: Not enough fees over last rebalance period for +EV LPing at infinite tick width when ignoring drift (approx)."
+            "WARNING: Not enough fees + rewards over last rebalance period for +EV LPing at infinite tick width when ignoring drift (approx)."
         )
         if not click.confirm("Proceed anyway?"):
             return

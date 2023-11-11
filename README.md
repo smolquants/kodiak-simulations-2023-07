@@ -89,38 +89,38 @@ INFO: Starting 'anvil' process.
 You are connected to provider network ethereum:mainnet-fork:foundry.
 Start block for LP [-1]:
 Pool address: 0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640
-Pool liquidity (L): 21222482588437805967
-Pool sqrt price (sqrtPriceX96): 1943643613257695920613088162082351
+Pool liquidity (L): 20327458074304365775
+Pool sqrt price (sqrtPriceX96): 1737122892402026829622771365810543
 Pool fee (f): 0.0005
 Pool tick spacing in natural log terms (delta_min): 0.0004999750016664899
-Rebalance period in blocks (tau): 50400
-Avg fees from fee growth with token0 in (theta0): 6.504326568279474e-09
-Avg fees from fee growth with token1 in (theta1): 6.462400985125087e-09
-Avg fees per unit of virtual liquidity over last rebalance period (theta): 6.4833637767022804e-09
+Rebalance period in blocks (tau): 7200
+Avg fees from fee growth with token0 in (theta0): 1.1001210938989522e-08
+Avg fees from fee growth with token1 in (theta1): 1.133334610430014e-08
+Avg fees per unit of virtual liquidity over last rebalance period (theta): 1.1167278521644831e-08
 Amount of token1 to LP: 1000000000000000000000
-Liquidity to deploy per unit of virtual liquidity (l): 0.0019207319570034528
+Liquidity to deploy per unit of virtual liquidity (l): 0.0022437060869181266
 Log-price per block drift (mu): 2.6549742469970873e-07
 Log-price per block volatility (sigma): 0.0004546440886143422
-Minimum theta for +EV at infinite tick width (approx): 2.5887283125403797e-08
-WARNING: Not enough fees over last rebalance period for +EV LPing at infinite tick width when ignoring drift (approx).
-Proceed anyway? [y/N]: y
+Minimum theta for +EV at infinite tick width (approx): 2.5895628019841654e-08
+Rewards per unit of virtual liquidity (R): 2.5895628019841654e-08
 Optimizing EV with respect to tick width ...
-Result from scipy.optimize.minimize:   message: CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL
+Result from scipy.optimize.minimize ...
+  message: CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH
   success: True
    status: 0
-      fun: -2.011451230767496
-        x: [ 1.042e+01]
-      nit: 16
-      jac: [-5.551e-06]
-     nfev: 34
-     njev: 17
+      fun: -2.0051472860350956
+        x: [ 4.284e-02]
+      nit: 2
+      jac: [ 8.926e-05]
+     nfev: 8
+     njev: 4
  hess_inv: <1x1 LbfgsInvHessProduct with dtype=float64>
-Optimal tick width (delta): [10.422413]
-Expected value at optimal tick width (E[V(tau)/V(0)]): [1.00572562]
-Expected yield at optimal tick width (E[V(tau)/V(0)-1]): [0.00572562]
-Current tick: 202164
-Suggested lower tick for next period: 97931
-Suggested upper tick for next period: 306389
+Optimal tick width (delta): 0.042836802956467614
+Expected value at optimal tick width (E[V(tau)/V(0)]): 1.0025736430175478
+Expected yield at optimal tick width (E[V(tau)/V(0)-1]): 0.002573643017547811
+Current tick: 199918
+Suggested lower tick for next period: 199495
+Suggested upper tick for next period: 200345
 ```
 
 which will output the optimal tick width, expected yield, and recommended lower and upper ticks to console.
@@ -148,7 +148,7 @@ Runner type (UniswapV3LPFullRunner, UniswapV3LPSimpleRunner): UniswapV3LPSimpleR
 Runner kwarg (ref_addrs) [{}]: {"pool": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640", "manager": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"}
 Runner kwarg (acc_addr) defaults to None. Do you want to input a value? [y/N]: N
 Runner kwarg (tick_width) [0]: 2800
-Runner kwarg (blocks_between_rebalance) [0]: 50400
+Runner kwarg (blocks_between_rebalance) [0]: 7200
 Runner kwarg (compound_fees_at_rebalance) [False]: True
 Input amount0, amount1, or liquidity? (liquidity, amount0, amount1): amount1
 amount1 [0]: 1000000000000000000000

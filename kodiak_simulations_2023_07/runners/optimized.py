@@ -12,6 +12,7 @@ class UniswapV3LPOptimizedRunner(UniswapV3LPSimpleRunner):
     mu: float = 0  # GBM drift fit param per block
     sigma: float = 1  # GBM vol fit param per block
     max_tick_width: int = 0  # max tick width if not full range
+    rewards: float = 0  # rewards per unit of external virtual liquidity
 
     def __init__(self, **data: Any):
         """
@@ -64,6 +65,9 @@ class UniswapV3LPOptimizedRunner(UniswapV3LPSimpleRunner):
 
         theta = self._calculate_theta(number, state)
         click.echo(f"Fee volume per unit of external liquidity: {theta}")
+
+        theta += self.rewards
+        click.echo(f"Fees + rewards per unit of external liquidity: {theta}")
 
         # default to full tick range in theta less than min for +EV LPing
         theta_min = (el + 1) * self.sigma**2 / 8
