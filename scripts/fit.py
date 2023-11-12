@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from scipy.stats import norm, probplot
+from scipy.stats import describe, norm, probplot
 
 
 def main():
@@ -29,14 +29,20 @@ def main():
 
     df['price'] = df['sqrt_price_x96'].apply(price)
     df['dlog(p)'] = np.log(df['price']).diff()
+    data = df[df['dlog(p)'].notnull()]['dlog(p)']
+
+    # report model independent stats for the data
+    click.echo("Calculating statistics on the log-price data ...")
+    click.echo("Result from scipy.stats.describe ...")
+    click.echo(f"{describe(data)}")
 
     # fit to log normal
     # @dev ignore null first row from diff()
     click.echo("Fitting log-price history to GBM ...")
-    data = df[df['dlog(p)'].notnull()]['dlog(p)']
     params = norm.fit(data)
     click.echo(f"Returned fit params for candles in csv: {params}")
 
+    # scale to per block figures
     t = df['block_number'].diff()[1]  # @dev assumes candles are uniform
     mu_p = params[-2] / t
     sigma = params[-1] / np.sqrt(t)
