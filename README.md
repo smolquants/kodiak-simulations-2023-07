@@ -2,7 +2,7 @@
 
 Economic simulations for [Kodiak](https://kodiak.finance).
 
-See the [supplementary note](https://hackmd.io/@fmrmf/Byk9XP-in) for derivations of the math expressions implemented in the repo.
+Full report in [`report.pdf`](./report.pdf). See the [supplementary note](https://hackmd.io/@fmrmf/Byk9XP-in) for derivations of the math expressions implemented in the repo.
 
 ## Replication
 
