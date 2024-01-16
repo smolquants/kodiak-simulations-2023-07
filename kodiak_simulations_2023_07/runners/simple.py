@@ -1,5 +1,6 @@
 import click
 
+from ape.types import SnapshotID
 from typing import ClassVar, Mapping
 
 from .base import UniswapV3LPFixedWidthRunner
@@ -68,6 +69,24 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
         click.echo(f"Value (after): {amount0 * price + amount1}")
 
         return (amount0, amount1)
+
+    def snapshot(self) -> (SnapshotID, Mapping):
+        """
+        Overrides snapshot to include internal fields updated
+        on `update_strategy`.
+        """
+        (snapshot_chain_id, snapshot_runner_kwargs) = super().snapshot()
+
+        extra_field_names = [
+            "_last_number_processed",
+            "_block_rebalance_last",
+            "_fees0_cumulative",
+            "_fees1_cumulative",
+        ]
+        for name in extra_field_names:
+            snapshot_runner_kwargs.update({name: getattr(self, name)})
+
+        return (snapshot_chain_id, snapshot_runner_kwargs)
 
     def init_mocks_state(self, number: int, state: Mapping):
         """
