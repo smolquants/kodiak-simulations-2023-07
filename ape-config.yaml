@@ -2,11 +2,19 @@ name: kodiak-simulations-2023-07
 
 plugins:
   - name: alchemy
+    version: 0.6.4
+  - name: arbitrum
+    version: 0.6.5
   - name: foundry
+    version: 0.6.16
   - name: notebook
+    version: 0.6.0
   - name: etherscan
+    version: 0.6.10
   - name: solidity
+    version: 0.6.8
   - name: risk  
+    version: 0.1.0a4
 
 default_ecosystem: ethereum
 

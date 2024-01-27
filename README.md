@@ -138,7 +138,7 @@ Compile the needed contracts
 (kodiak-simulations-2023-07) ape compile --size
 ```
 
-Then run the backtest script
+Then run the backtest script with e.g. the `UniswapV3LPSimpleRunner`
 
 ```sh
 (kodiak-simulations-2023-07) ape run backtester
@@ -156,4 +156,29 @@ Start block number: 16219692
 Stop block number [-1]: 16867692
 Step size [1]: 2400
 Setting up runner ...
+```
+
+or the `UniswapV3LPOptimizedRunner`
+
+```sh
+(kodiak-simulations-2023-07) ape run backtester
+INFO: Starting 'anvil' process.
+You are connected to provider network ethereum:mainnet-fork:foundry.
+Runner type (UniswapV3LPFullRunner, UniswapV3LPSimpleRunner, UniswapV3LPOptimizedRunner): UniswapV3LPOptimizedRunner
+Runner kwarg (ref_addrs) [{}]: {"pool": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640", "manager": "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"}
+Runner kwarg (acc_addr) defaults to None. Do you want to input a value? [y/N]: N
+Runner kwarg (tick_width) [0]:
+Runner kwarg (blocks_between_rebalance) [0]: 7200
+Runner kwarg (compound_fees_at_rebalance) [False]: True
+Runner kwarg (mu) [0]:
+Runner kwarg (sigma) [1]: 0.0004546440886143422
+Runner kwarg (max_tick_width) [0]: 14000
+Runner kwarg (rewards) [0]:
+Input amount0, amount1, or liquidity? (liquidity, amount0, amount1): amount1
+amount1 [0]: 1000000000000000000000
+Start block number: 12592729
+Stop block number [-1]: 19007104
+Step size [1]: 2400
+Setting up runner ...
+Deploying mock ERC20 tokens ...
 ```
