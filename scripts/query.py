@@ -15,9 +15,9 @@ def main():
     connection_name = f"{ecosystem_name}:{network_name}:{provider_name}"
     click.echo(f"You are connected to provider network {connection_name}.")
 
-    # fail if not mainnet-fork
-    if network_name != "mainnet-fork":
-        raise ValueError("not connected to mainnet-fork.")
+    # fail if not mainnet-fork or mainnet
+    if network_name != "mainnet-fork" and network_name != "mainnet":
+        raise ValueError("not connected to mainnet-fork or mainnet.")
 
     # get last block
     last_block_number = chain.blocks.head.number

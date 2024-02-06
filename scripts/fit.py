@@ -25,7 +25,7 @@ def main():
         return
 
     def price(sqrt_price_x96: int) -> int:
-        return (int(sqrt_price_x96) ** 2) // (1 << 192)
+        return (int(sqrt_price_x96) ** 2) / (1 << 192)
 
     df['price'] = df['sqrt_price_x96'].apply(price)
     df['dlog(p)'] = np.log(df['price']).diff()

@@ -23,6 +23,11 @@ ethereum:
   mainnet_fork:
     default_provider: foundry
 
+arbitrum:
+  default_network: mainnet-fork
+  mainnet_fork:
+    default_provider: foundry
+
 foundry:
   fork:
     ethereum:
