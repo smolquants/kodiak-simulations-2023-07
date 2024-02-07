@@ -3,9 +3,16 @@ import os
 import pandas as pd
 
 from typing import Any, List, Mapping
+
 from backtest_ape.uniswap.v3 import UniswapV3LPBaseRunner
+from backtest_ape.setup import deploy_mock_erc20
+from backtest_ape.uniswap.v3.setup import (
+    deploy_mock_position_manager,
+    deploy_mock_univ3_factory,
+)
 
 from ..constants import MAX_TICK
+from .setup import create_mock_pool
 
 
 # fixed tick width lp runner classes for backtesting
@@ -189,3 +196,47 @@ class UniswapV3LPFixedWidthRunner(UniswapV3LPBaseRunner):
         header = not os.path.exists(path)
         df = pd.DataFrame(data={k: [v] for k, v in data.items()})
         df.to_csv(path, index=False, mode="a", header=header)
+
+    def deploy_mocks(self):
+        """
+        Deploys the mock contracts.
+        """
+        # deploy the mock erc20s
+        click.echo("Deploying mock ERC20 tokens ...")
+        mock_tokens = [
+            deploy_mock_erc20(f"Mock Token{i}", token.symbol(), token.decimals(), self.acc)
+            for i, token in enumerate(self._refs["tokens"])
+        ]
+
+        # deploy weth if necessary
+        mock_weth = mock_tokens[0] if mock_tokens[0].symbol() == "WETH" else mock_tokens[1]
+        if mock_weth.symbol() != "WETH":
+            mock_weth = deploy_mock_erc20("Mock WETH9", "WETH", 18, self.acc)
+
+        # deploy the mock univ3 factory
+        click.echo("Deploying mock Uniswap V3 factory ...")
+        mock_factory = deploy_mock_univ3_factory(self.acc)
+
+        # deploy the mock NFT position manager
+        # NOTE: uses zero address for descriptor so tokenURI will fail
+        click.echo("Deploying the mock position manager ...")
+        mock_manager = deploy_mock_position_manager(mock_factory, mock_weth, self.acc)
+
+        # create the pool through the mock univ3 factory
+        pool = self._refs["pool"]
+        fee = pool.fee()
+        sqrt_price_x96 = pool.slot0().sqrtPriceX96
+        mock_pool = create_mock_pool(
+            mock_factory,
+            mock_tokens,
+            fee,
+            sqrt_price_x96,
+            self.acc,
+        )
+
+        self._mocks = {
+            "tokens": mock_tokens,
+            "factory": mock_factory,
+            "manager": mock_manager,
+            "pool": mock_pool,
+        }

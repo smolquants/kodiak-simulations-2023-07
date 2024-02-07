@@ -45,8 +45,8 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
             state (Mapping): The state of mocks
         """
         liquidity = state["liquidity"]
-        price = (int(state["slot0"].sqrtPriceX96) ** 2) // (1 << 192)
-        value1 = amount0_before * price + amount1_before
+        price = (int(state["slot0"].sqrtPriceX96) ** 2) / (1 << 192)
+        value1 = int(amount0_before * price + amount1_before)
         x1 = (liquidity * state["slot0"].sqrtPriceX96) // (1 << 96)
 
         amount1 = value1 // 2  # (1/2) * (dx * p + dy)
@@ -60,13 +60,13 @@ class UniswapV3LPSimpleRunner(UniswapV3LPFixedWidthRunner):
         eps1 = int(-abs(dx1) * (_f / 2 + (1 / 2) * abs(dx1) / x1))
 
         amount1 += eps1
-        amount0 = amount1 // price  # satisfies rebalance condition
+        amount0 = int(amount1 / price)  # satisfies rebalance condition
 
         click.echo("Calculating position amounts after rebalance ...")
         click.echo(f"Amounts (before): {(amount0_before, amount1_before)}")
         click.echo(f"Amounts (after): {(amount0, amount1)}")
         click.echo(f"Value (before): {value1}")
-        click.echo(f"Value (after): {amount0 * price + amount1}")
+        click.echo(f"Value (after): {int(amount0 * price + amount1)}")
 
         return (amount0, amount1)
 
